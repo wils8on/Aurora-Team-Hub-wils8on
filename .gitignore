@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+
+data/gestao.db
+
+.streamlit/secrets.toml
+
+.vscode/
+.idea/
+
+.DS_Store
