@@ -1,5 +1,6 @@
-streamlit
+streamlit[auth]
 pandas
 sqlalchemy
 plotly
 python-dotenv
+reportlab

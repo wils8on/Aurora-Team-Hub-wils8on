@@ -57,6 +57,24 @@ def listar_radares():
     return lista
 
 
+def editar_radar(radar_id, dados):
+
+    db = SessionLocal()
+
+    radar = db.query(RadarColaborador).filter(
+        RadarColaborador.id == radar_id
+    ).first()
+
+    if radar:
+
+        for campo, valor in dados.items():
+            setattr(radar, campo, valor)
+
+        db.commit()
+
+    db.close()
+
+
 def excluir_radar(radar_id):
 
     db = SessionLocal()
@@ -70,3 +88,13 @@ def excluir_radar(radar_id):
         db.commit()
 
     db.close()
+
+def listar_radares_colaborador(colaborador_id):
+
+    radares = listar_radares()
+
+    return [
+        radar
+        for radar in radares
+        if radar["colaborador_id"] == colaborador_id
+    ]

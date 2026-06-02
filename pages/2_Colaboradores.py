@@ -1,5 +1,15 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
+
+from services.resumo_inteligente_service import (
+    gerar_resumo_colaborador
+)
+
+from services.copilot_service import (
+    gerar_preparacao_1_1,
+    gerar_pauta_1_1
+)
 
 from datetime import date
 
@@ -8,6 +18,8 @@ from services.colaboradores_service import listar_colaboradores
 from services.colaboradores_service import editar_colaborador
 from services.colaboradores_service import excluir_colaborador
 
+from services.colaboradores_service import obter_colaborador_360
+from services.relatorio_360_service import gerar_pdf_colaborador_360
 from services.evolucoes_service import criar_evolucao
 from services.evolucoes_service import listar_evolucoes_colaborador
 
@@ -32,6 +44,37 @@ def obter_indice(lista, valor, padrao=0):
         return lista.index(valor)
 
     return padrao
+
+
+def calcular_tempo_casa(data_admissao):
+
+    if not data_admissao:
+        return "-"
+
+    dias = (date.today() - data_admissao).days
+
+    if dias < 0:
+        return "-"
+
+    anos = dias // 365
+    meses = (dias % 365) // 30
+
+    return f"{anos}a {meses}m"
+
+
+def classificar_risco_radar(valor):
+
+    if valor == "-":
+        return "Sem registro"
+
+    if valor >= 4:
+        return f"🔴 Alto ({valor})"
+
+    if valor == 3:
+        return f"🟡 Moderado ({valor})"
+
+    return f"🟢 Baixo ({valor})"
+
 
 
 st.title("👥 Colaboradores")
@@ -336,8 +379,10 @@ if colaboradores:
     with col4:
         st.metric("Risco", colaborador_selecionado.risco_percebido or "-")
 
-    ficha1, ficha2, ficha3, ficha4, ficha5, ficha6, ficha7 = st.tabs(
+    ficha1, ficha2, ficha3, ficha4, ficha5, ficha6, ficha7, ficha8, ficha9 = st.tabs(
         [
+            "360°",
+            "Tendências",
             "Resumo",
             "Operacional",
             "Desenvolvimento",
@@ -349,6 +394,520 @@ if colaboradores:
     )
 
     with ficha1:
+        st.subheader("Visão 360° do Colaborador")
+
+        dados_360 = obter_colaborador_360(colaborador_selecionado.id)
+
+        resumo_ia = gerar_resumo_colaborador(
+            dados_360
+        )
+
+        st.subheader(
+            "🤖 Resumo Executivo Inteligente"
+        )
+
+        st.markdown(
+            resumo_ia["diagnostico"]
+        )
+
+        st.markdown(
+            resumo_ia["recomendacao"]
+        )
+
+        copilot = gerar_preparacao_1_1(
+            dados_360
+        )
+
+        pauta_ia = gerar_pauta_1_1(
+            dados_360
+        )
+
+        st.divider()
+
+        st.subheader("🤖 Aurora Copilot • Preparação para 1:1")
+
+        st.markdown("### 📋 Situação Atual")
+
+        for item in copilot["resumo"]:
+            st.write(f"• {item}")
+
+        if copilot["riscos"]:
+
+            st.markdown("### ⚠️ Pontos de Atenção")
+
+            for item in copilot["riscos"]:
+                st.warning(item)
+
+        if copilot["perguntas"]:
+
+            st.markdown("### 💬 Perguntas Sugeridas")
+
+            for pergunta in copilot["perguntas"]:
+                st.info(pergunta)
+
+        st.markdown("### 🎯 Próximos Passos Recomendados")
+
+        for item in copilot["proximos_passos"]:
+            st.success(item)
+
+        st.divider()
+
+        st.subheader("📋 Aurora Copilot 2.0 • Pauta Inteligente")
+
+        st.markdown("### 🎯 Objetivo da Reunião")
+
+        for item in pauta_ia["objetivo"]:
+            st.success(item)
+
+        if pauta_ia["assuntos_sensiveis"]:
+
+            st.markdown("### ⚠️ Assuntos Sensíveis")
+
+            for item in pauta_ia["assuntos_sensiveis"]:
+                st.warning(item)
+
+        st.markdown("### 📋 Pauta Recomendada")
+
+        for indice, item in enumerate(
+            pauta_ia["pauta"],
+            start=1
+        ):
+            st.info(
+                f"{indice}. {item}"
+            )
+
+        st.divider()
+
+        if dados_360:
+
+            colab = dados_360["colaborador"]
+
+            pdf_360 = gerar_pdf_colaborador_360(dados_360)
+
+            nome_arquivo_360 = (
+                f"{colab['nome'].replace(' ', '_')}_relatorio_360.pdf"
+                if colab.get("nome")
+                else "relatorio_360_colaborador.pdf"
+            )
+
+            st.download_button(
+                label="📄 Baixar Relatório 360° em PDF",
+                data=pdf_360,
+                file_name=nome_arquivo_360,
+                mime="application/pdf",
+                use_container_width=True
+            )
+
+            st.divider()
+
+            ultimo_radar = (
+                dados_360["radares"][0]
+                if dados_360["radares"]
+                else None
+            )
+
+            risco_radar = (
+                ultimo_radar["risco_desgaste"]
+                if ultimo_radar
+                else "-"
+            )
+
+            col_a, col_b, col_c, col_d, col_e = st.columns(5)
+
+            with col_a:
+                st.metric("Status", colab["status"] or "-")
+
+            with col_b:
+                st.metric(
+                    "Tempo de Casa",
+                    calcular_tempo_casa(colaborador_selecionado.data_admissao)
+                )
+
+            with col_c:
+                st.metric(
+                    "Próxima 1:1",
+                    formatar_data_br(colab["proxima_reuniao_recomendada"])
+                )
+
+            with col_d:
+                st.metric("Momento", colab["momento_atual"] or "-")
+
+            with col_e:
+                st.metric("Risco Gerencial", colab["risco_percebido"] or "-")
+
+            st.divider()
+
+            col1, col2, col3, col4 = st.columns(4)
+
+            with col1:
+                ultima_reuniao = (
+                    dados_360["reunioes"][0]["data"]
+                    if dados_360["reunioes"]
+                    else None
+                )
+                st.metric("Última reunião", formatar_data_br(ultima_reuniao))
+
+            with col2:
+                ultimo_feedback = (
+                    dados_360["feedbacks"][0]["data"]
+                    if dados_360["feedbacks"]
+                    else None
+                )
+                st.metric("Último feedback", formatar_data_br(ultimo_feedback))
+
+            with col3:
+                planos_abertos = [
+                    plano for plano in dados_360["planos"]
+                    if plano["status"] in ["Pendente", "Em andamento"]
+                ]
+                st.metric("Planos abertos", len(planos_abertos))
+
+            with col4:
+                st.metric(
+                    "Risco Radar",
+                    classificar_risco_radar(risco_radar)
+                )
+
+            st.divider()
+
+            st.subheader("Saúde Atual")
+
+            if ultimo_radar:
+
+                col1, col2, col3, col4, col5 = st.columns(5)
+
+                with col1:
+                    st.metric("Motivação", ultimo_radar["motivacao"])
+
+                with col2:
+                    st.metric("Performance", ultimo_radar["performance"])
+
+                with col3:
+                    st.metric("Engajamento", ultimo_radar["engajamento"])
+
+                with col4:
+                    st.metric("Risco", ultimo_radar["risco_desgaste"])
+
+                with col5:
+                    st.metric("Alinhamento", ultimo_radar["alinhamento_equipe"])
+
+            else:
+                st.info("Ainda não há registro de Radar para este colaborador.")
+
+            st.divider()
+
+            aba_360_1, aba_360_2, aba_360_3, aba_360_4, aba_360_5, aba_360_6 = st.tabs(
+                [
+                    "Reuniões",
+                    "Feedbacks",
+                    "Planos",
+                    "Radar",
+                    "Notas",
+                    "Evoluções"
+                ]
+            )
+
+            with aba_360_1:
+                if dados_360["reunioes"]:
+                    st.dataframe(
+                        pd.DataFrame(
+                            [
+                                {
+                                    "Data": formatar_data_br(item["data"]),
+                                    "Tipo": item["tipo"],
+                                    "Status": item["status"],
+                                    "Assunto": item["assunto_principal"],
+                                    "Resumo": item["resumo_final"]
+                                }
+                                for item in dados_360["reunioes"]
+                            ]
+                        ),
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                else:
+                    st.info("Nenhuma reunião registrada para este colaborador.")
+
+            with aba_360_2:
+                if dados_360["feedbacks"]:
+                    st.dataframe(
+                        pd.DataFrame(
+                            [
+                                {
+                                    "Data": formatar_data_br(item["data"]),
+                                    "Tipo": item["tipo"],
+                                    "Origem": item["origem"],
+                                    "Status": item["status_acompanhamento"],
+                                    "Contexto": item["contexto"]
+                                }
+                                for item in dados_360["feedbacks"]
+                            ]
+                        ),
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                else:
+                    st.info("Nenhum feedback registrado para este colaborador.")
+
+            with aba_360_3:
+                if dados_360["planos"]:
+                    st.dataframe(
+                        pd.DataFrame(
+                            [
+                                {
+                                    "Prazo": formatar_data_br(item["prazo"]),
+                                    "Título": item["titulo"],
+                                    "Prioridade": item["prioridade"],
+                                    "Status": item["status"]
+                                }
+                                for item in dados_360["planos"]
+                            ]
+                        ),
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                else:
+                    st.info("Nenhum plano de ação registrado para este colaborador.")
+
+            with aba_360_4:
+                if dados_360["radares"]:
+                    st.dataframe(
+                        pd.DataFrame(
+                            [
+                                {
+                                    "Data": formatar_data_br(item["data_registro"]),
+                                    "Motivação": item["motivacao"],
+                                    "Performance": item["performance"],
+                                    "Engajamento": item["engajamento"],
+                                    "Risco": item["risco_desgaste"],
+                                    "Alinhamento": item["alinhamento_equipe"]
+                                }
+                                for item in dados_360["radares"]
+                            ]
+                        ),
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                else:
+                    st.info("Nenhum radar registrado para este colaborador.")
+
+            with aba_360_5:
+                if dados_360["notas"]:
+                    st.dataframe(
+                        pd.DataFrame(
+                            [
+                                {
+                                    "Data": formatar_data_br(item["data"]),
+                                    "Título": item["titulo"],
+                                    "Categoria": item["categoria"],
+                                    "Prioridade": item["prioridade"],
+                                    "Conteúdo": item["conteudo"]
+                                }
+                                for item in dados_360["notas"]
+                            ]
+                        ),
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                else:
+                    st.info("Nenhuma nota registrada para este colaborador.")
+
+            with aba_360_6:
+                if dados_360["evolucoes"]:
+                    st.dataframe(
+                        pd.DataFrame(
+                            [
+                                {
+                                    "Data": formatar_data_br(item["data"]),
+                                    "Tipo": item["tipo_evolucao"],
+                                    "Cargo anterior": item["cargo_anterior"],
+                                    "Novo cargo": item["cargo_novo"],
+                                    "Contrato anterior": item["contrato_anterior"],
+                                    "Novo contrato": item["contrato_novo"],
+                                    "Motivo": item["motivo"]
+                                }
+                                for item in dados_360["evolucoes"]
+                            ]
+                        ),
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                else:
+                    st.info("Nenhuma evolução registrada para este colaborador.")
+
+    with ficha2:
+        st.subheader("📈 Tendências do Radar")
+
+        dados_tendencia = obter_colaborador_360(colaborador_selecionado.id)
+
+        if not dados_tendencia or not dados_tendencia["radares"]:
+            st.info("Ainda não há registros de Radar para gerar tendências.")
+        else:
+            radares_tendencia = sorted(
+                dados_tendencia["radares"],
+                key=lambda item: item["data_registro"]
+            )
+
+            tabela_tendencia = []
+
+            for item in radares_tendencia:
+                tabela_tendencia.append(
+                    {
+                        "Data": item["data_registro"],
+                        "Motivação": item["motivacao"],
+                        "Performance": item["performance"],
+                        "Engajamento": item["engajamento"],
+                        "Risco": item["risco_desgaste"],
+                        "Alinhamento": item["alinhamento_equipe"]
+                    }
+                )
+
+            df_tendencia = pd.DataFrame(tabela_tendencia)
+
+            df_grafico = df_tendencia.melt(
+                id_vars=["Data"],
+                value_vars=[
+                    "Motivação",
+                    "Performance",
+                    "Engajamento",
+                    "Risco",
+                    "Alinhamento"
+                ],
+                var_name="Indicador",
+                value_name="Valor"
+            )
+
+            fig = px.line(
+                df_grafico,
+                x="Data",
+                y="Valor",
+                color="Indicador",
+                markers=True,
+                title="Evolução dos indicadores do Radar"
+            )
+
+            fig.update_yaxes(
+                range=[0, 5.2],
+                dtick=1
+            )
+
+            fig.update_layout(
+                height=450,
+                legend_title_text="Indicador",
+                margin=dict(l=20, r=20, t=60, b=20)
+            )
+
+            st.plotly_chart(
+                fig,
+                use_container_width=True
+            )
+
+            st.divider()
+
+            st.subheader("Leitura da Tendência")
+
+            def interpretar_tendencia(nome, primeiro, ultimo, menor_e_melhor=False):
+
+                if primeiro == ultimo:
+                    return {
+                        "Indicador": nome,
+                        "Início": primeiro,
+                        "Atual": ultimo,
+                        "Tendência": "Estável",
+                        "Leitura": "Sem variação relevante."
+                    }
+
+                if menor_e_melhor:
+                    melhorou = ultimo < primeiro
+                else:
+                    melhorou = ultimo > primeiro
+
+                if melhorou:
+                    tendencia = "Melhora"
+                    leitura = "Evolução positiva no período."
+                else:
+                    tendencia = "Piora"
+                    leitura = "Ponto de atenção no período."
+
+                return {
+                    "Indicador": nome,
+                    "Início": primeiro,
+                    "Atual": ultimo,
+                    "Tendência": tendencia,
+                    "Leitura": leitura
+                }
+
+            primeiro = df_tendencia.iloc[0]
+            ultimo = df_tendencia.iloc[-1]
+
+            leitura_tendencia = [
+                interpretar_tendencia(
+                    "Motivação",
+                    primeiro["Motivação"],
+                    ultimo["Motivação"]
+                ),
+                interpretar_tendencia(
+                    "Performance",
+                    primeiro["Performance"],
+                    ultimo["Performance"]
+                ),
+                interpretar_tendencia(
+                    "Engajamento",
+                    primeiro["Engajamento"],
+                    ultimo["Engajamento"]
+                ),
+                interpretar_tendencia(
+                    "Risco",
+                    primeiro["Risco"],
+                    ultimo["Risco"],
+                    menor_e_melhor=True
+                ),
+                interpretar_tendencia(
+                    "Alinhamento",
+                    primeiro["Alinhamento"],
+                    ultimo["Alinhamento"]
+                )
+            ]
+
+            col1, col2, col3, col4, col5 = st.columns(5)
+
+            colunas = [col1, col2, col3, col4, col5]
+
+            for coluna, leitura in zip(colunas, leitura_tendencia):
+                with coluna:
+                    if leitura["Tendência"] == "Melhora":
+                        st.success(
+                            f"**{leitura['Indicador']}**\n\n"
+                            f"{leitura['Início']} → {leitura['Atual']}\n\n"
+                            f"⬆️ {leitura['Tendência']}"
+                        )
+                    elif leitura["Tendência"] == "Piora":
+                        st.warning(
+                            f"**{leitura['Indicador']}**\n\n"
+                            f"{leitura['Início']} → {leitura['Atual']}\n\n"
+                            f"⬇️ {leitura['Tendência']}"
+                        )
+                    else:
+                        st.info(
+                            f"**{leitura['Indicador']}**\n\n"
+                            f"{leitura['Início']} → {leitura['Atual']}\n\n"
+                            f"➡️ {leitura['Tendência']}"
+                        )
+
+            st.divider()
+
+            st.subheader("Histórico do Radar")
+
+            df_tabela = df_tendencia.copy()
+            df_tabela["Data"] = df_tabela["Data"].apply(formatar_data_br)
+
+            st.dataframe(
+                df_tabela,
+                use_container_width=True,
+                hide_index=True
+            )
+
+    with ficha3:
         st.write("**Nome social:**", colaborador_selecionado.nome_social or "-")
         st.write("**E-mail corporativo:**", colaborador_selecionado.email or "-")
         st.write("**E-mail pessoal:**", colaborador_selecionado.email_pessoal or "-")
@@ -363,7 +922,7 @@ if colaboradores:
         st.write("**Área / Equipe:**", colaborador_selecionado.area_equipe or "-")
         st.write("**Status:**", colaborador_selecionado.status or "-")
 
-    with ficha2:
+    with ficha4:
         st.write("**Principais responsabilidades:**")
         st.write(colaborador_selecionado.principais_responsabilidades or "-")
 
@@ -376,7 +935,7 @@ if colaboradores:
         st.write("**Entregas sob responsabilidade:**")
         st.write(colaborador_selecionado.entregas_responsabilidade or "-")
 
-    with ficha3:
+    with ficha5:
         st.write("**Pontos fortes:**")
         st.write(colaborador_selecionado.pontos_fortes or "-")
 
@@ -395,7 +954,7 @@ if colaboradores:
         st.write("**Competências a desenvolver:**")
         st.write(colaborador_selecionado.competencias_desenvolver or "-")
 
-    with ficha4:
+    with ficha6:
         st.write("**Frequência ideal de 1:1:**", colaborador_selecionado.frequencia_1_1 or "-")
 
         st.write(
@@ -412,7 +971,7 @@ if colaboradores:
         st.write("**Risco percebido:**", colaborador_selecionado.risco_percebido or "-")
         st.write("**Momento atual:**", colaborador_selecionado.momento_atual or "-")
 
-    with ficha5:
+    with ficha7:
         st.subheader("Histórico de Evoluções")
 
         with st.expander("➕ Registrar Evolução", expanded=False):
@@ -527,7 +1086,7 @@ if colaboradores:
         else:
             st.info("Nenhuma evolução registrada para este colaborador.")
 
-    with ficha6:
+    with ficha8:
         st.subheader("✏️ Editar Colaborador")
 
         with st.form("form_editar_colaborador"):
@@ -865,7 +1424,7 @@ if colaboradores:
                     st.success("Colaborador atualizado com sucesso.")
                     st.rerun()
 
-    with ficha7:
+    with ficha9:
         st.write(colaborador_selecionado.observacoes_gerais or "-")
 
     st.divider()

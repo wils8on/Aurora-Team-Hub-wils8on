@@ -11,6 +11,7 @@ from services.reunioes_service import editar_reuniao
 from services.reunioes_service import excluir_reuniao
 
 from utils.datas import formatar_data_br
+from services.relatorios_service import gerar_pdf_reuniao
 
 
 DATA_MINIMA = date(1950, 1, 1)
@@ -304,6 +305,23 @@ if reunioes:
 
         st.write("**Resumo final:**")
         st.write(reuniao_selecionada["resumo_final"] or "-")
+
+        st.divider()
+
+        pdf_reuniao = gerar_pdf_reuniao(reuniao_selecionada)
+
+        nome_arquivo_pdf = (
+            f"relatorio_reuniao_"
+            f"{reuniao_selecionada['colaborador_nome'].replace(' ', '_').lower()}_"
+            f"{reuniao_selecionada['data']}.pdf"
+        )
+
+        st.download_button(
+            label="📄 Baixar Relatório da Reunião em PDF",
+            data=pdf_reuniao,
+            file_name=nome_arquivo_pdf,
+            mime="application/pdf"
+        )
 
     with ficha2:
         st.write("**Humor percebido:**", reuniao_selecionada["humor_percebido"] or "-")

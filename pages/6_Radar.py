@@ -6,6 +6,7 @@ from datetime import date
 from services.colaboradores_service import listar_colaboradores
 from services.radar_service import criar_radar
 from services.radar_service import listar_radares
+from services.radar_service import editar_radar
 from services.radar_service import excluir_radar
 
 from utils.datas import formatar_data_br
@@ -159,33 +160,143 @@ if radares:
         format_func=lambda item: f"{formatar_data_br(item['data_registro'])} | {item['colaborador_nome']}"
     )
 
-    col1, col2, col3 = st.columns(3)
+    ficha1, ficha2 = st.tabs(
+        [
+            "Resumo",
+            "Editar"
+        ]
+    )
 
-    with col1:
-        st.metric("Motivação", radar_selecionado["motivacao"])
+    with ficha1:
+        col1, col2, col3 = st.columns(3)
 
-    with col2:
-        st.metric("Performance", radar_selecionado["performance"])
+        with col1:
+            st.metric("Motivação", radar_selecionado["motivacao"])
 
-    with col3:
-        st.metric("Risco", radar_selecionado["risco_desgaste"])
+        with col2:
+            st.metric("Performance", radar_selecionado["performance"])
 
-    col4, col5, col6 = st.columns(3)
+        with col3:
+            st.metric("Risco", radar_selecionado["risco_desgaste"])
 
-    with col4:
-        st.metric("Carga", radar_selecionado["carga_trabalho"])
+        col4, col5, col6 = st.columns(3)
 
-    with col5:
-        st.metric("Engajamento", radar_selecionado["engajamento"])
+        with col4:
+            st.metric("Carga", radar_selecionado["carga_trabalho"])
 
-    with col6:
-        st.metric("Alinhamento", radar_selecionado["alinhamento_equipe"])
+        with col5:
+            st.metric("Engajamento", radar_selecionado["engajamento"])
 
-    st.write("**Data:**", formatar_data_br(radar_selecionado["data_registro"]))
-    st.write("**Colaborador:**", radar_selecionado["colaborador_nome"])
+        with col6:
+            st.metric("Alinhamento", radar_selecionado["alinhamento_equipe"])
 
-    st.write("**Observações:**")
-    st.write(radar_selecionado["observacoes"] or "-")
+        st.write("**Data:**", formatar_data_br(radar_selecionado["data_registro"]))
+        st.write("**Colaborador:**", radar_selecionado["colaborador_nome"])
+
+        st.write("**Observações:**")
+        st.write(radar_selecionado["observacoes"] or "-")
+
+    with ficha2:
+        st.subheader("✏️ Editar Registro de Radar")
+
+        with st.form("form_editar_radar"):
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                indice_colaborador = 0
+
+                for indice, colaborador_item in enumerate(colaboradores):
+                    if colaborador_item.id == radar_selecionado["colaborador_id"]:
+                        indice_colaborador = indice
+
+                colaborador_editado = st.selectbox(
+                    "Colaborador",
+                    colaboradores,
+                    index=indice_colaborador,
+                    format_func=lambda item: item.nome
+                )
+
+                data_registro_editada = st.date_input(
+                    "Data do registro",
+                    value=radar_selecionado["data_registro"] or date.today(),
+                    min_value=DATA_MINIMA,
+                    max_value=DATA_MAXIMA,
+                    format="DD/MM/YYYY"
+                )
+
+                motivacao_editada = st.slider(
+                    "Motivação",
+                    1,
+                    5,
+                    int(radar_selecionado["motivacao"] or 3)
+                )
+
+                performance_editada = st.slider(
+                    "Performance percebida",
+                    1,
+                    5,
+                    int(radar_selecionado["performance"] or 3)
+                )
+
+                carga_trabalho_editada = st.slider(
+                    "Carga de trabalho",
+                    1,
+                    5,
+                    int(radar_selecionado["carga_trabalho"] or 3)
+                )
+
+            with col2:
+                engajamento_editado = st.slider(
+                    "Engajamento",
+                    1,
+                    5,
+                    int(radar_selecionado["engajamento"] or 3)
+                )
+
+                risco_desgaste_editado = st.slider(
+                    "Risco de desgaste / burnout",
+                    1,
+                    5,
+                    int(radar_selecionado["risco_desgaste"] or 3)
+                )
+
+                alinhamento_equipe_editado = st.slider(
+                    "Alinhamento com a equipe",
+                    1,
+                    5,
+                    int(radar_selecionado["alinhamento_equipe"] or 3)
+                )
+
+                observacoes_editadas = st.text_area(
+                    "Observações",
+                    value=radar_selecionado["observacoes"] or "",
+                    height=180
+                )
+
+            salvar_edicao = st.form_submit_button("Salvar Alterações")
+
+            if salvar_edicao:
+
+                dados_editados = {
+                    "colaborador_id": colaborador_editado.id,
+                    "data_registro": data_registro_editada,
+                    "motivacao": motivacao_editada,
+                    "performance": performance_editada,
+                    "carga_trabalho": carga_trabalho_editada,
+                    "engajamento": engajamento_editado,
+                    "risco_desgaste": risco_desgaste_editado,
+                    "alinhamento_equipe": alinhamento_equipe_editado,
+                    "observacoes": observacoes_editadas
+                }
+
+                editar_radar(
+                    radar_selecionado["id"],
+                    dados_editados
+                )
+
+                st.success("Registro de radar atualizado com sucesso.")
+                st.rerun()
 
     st.divider()
 
