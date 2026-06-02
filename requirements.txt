@@ -1,6 +1,7 @@
-streamlit[auth]
+streamlit
 pandas
 sqlalchemy
 plotly
 python-dotenv
 reportlab
+psycopg2-binary
