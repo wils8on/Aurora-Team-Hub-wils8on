@@ -75,6 +75,7 @@ def tela_login():
             use_container_width=True
         ):
             st.login()
+            st.stop()
 
 
 def exigir_login():
