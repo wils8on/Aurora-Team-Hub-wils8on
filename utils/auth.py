@@ -3,47 +3,18 @@ import streamlit as st
 
 def esta_logado():
 
-    try:
-        return st.user.is_logged_in
-    except Exception:
-        return False
-
-
-def obter_email_usuario():
-
-    if not esta_logado():
-        return None
-
-    return st.user.get("email")
+    return st.session_state.get(
+        "aurora_logado",
+        False
+    )
 
 
 def obter_nome_usuario():
 
-    if not esta_logado():
-        return "Usuário"
-
-    return st.user.get(
-        "name",
+    return st.session_state.get(
+        "aurora_usuario",
         "Usuário"
     )
-
-
-def usuario_autorizado():
-
-    email = obter_email_usuario()
-
-    emails_permitidos = st.secrets.get(
-        "permissions",
-        {}
-    ).get(
-        "allowed_emails",
-        []
-    )
-
-    if not emails_permitidos:
-        return True
-
-    return email in emails_permitidos
 
 
 def tela_login():
@@ -54,7 +25,7 @@ def tela_login():
             <h1>🌅 Aurora Team Hub</h1>
             <h3>Centro inteligente de liderança e gestão de equipes</h3>
             <p style="color:#94a3b8;">
-                Faça login com sua conta Google para acessar o sistema.
+                Acesse com suas credenciais para continuar.
             </p>
         </div>
         """,
@@ -70,12 +41,52 @@ def tela_login():
     )
 
     with col2:
+
+        usuario = st.text_input(
+            "Usuário"
+        )
+
+        senha = st.text_input(
+            "Senha",
+            type="password"
+        )
+
         if st.button(
-            "Entrar com Google",
+            "Entrar",
             use_container_width=True
         ):
-            st.login("google")
-            st.stop()
+
+            usuario_correto = st.secrets.get(
+                "login",
+                {}
+            ).get(
+                "usuario",
+                ""
+            )
+
+            senha_correta = st.secrets.get(
+                "login",
+                {}
+            ).get(
+                "senha",
+                ""
+            )
+
+            if (
+                usuario == usuario_correto
+                and senha == senha_correta
+            ):
+
+                st.session_state["aurora_logado"] = True
+                st.session_state["aurora_usuario"] = usuario
+
+                st.rerun()
+
+            else:
+
+                st.error(
+                    "Usuário ou senha inválidos."
+                )
 
 
 def exigir_login():
@@ -85,40 +96,19 @@ def exigir_login():
         tela_login()
         st.stop()
 
-    st.sidebar.write("DEBUG LOGIN")
-    st.sidebar.write(st.user)
-    st.sidebar.write("Email:", obter_email_usuario())
-    st.sidebar.write("Autorizado:", usuario_autorizado())
-
-    if not usuario_autorizado():
-
-        st.error(
-            "Seu e-mail não possui permissão para acessar este sistema."
-        )
-
-        st.caption(
-            f"E-mail autenticado: {obter_email_usuario()}"
-        )
-
-        if st.button(
-            "Sair",
-            use_container_width=True
-        ):
-            st.logout()
-
-        st.stop()
-
 
 def mostrar_usuario_sidebar():
 
     if esta_logado():
 
         nome = obter_nome_usuario()
-        email = obter_email_usuario()
 
         st.sidebar.markdown("---")
-        st.sidebar.markdown(f"**{nome}**")
-        st.sidebar.caption(email)
+        st.sidebar.markdown(f"**Usuário:** {nome}")
 
         if st.sidebar.button("Sair"):
-            st.logout()
+
+            st.session_state["aurora_logado"] = False
+            st.session_state["aurora_usuario"] = None
+
+            st.rerun()
