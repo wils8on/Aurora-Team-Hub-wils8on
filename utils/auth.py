@@ -74,7 +74,7 @@ def tela_login():
             "Entrar com Google",
             use_container_width=True
         ):
-            st.login("google")
+            st.login()
 
 
 def exigir_login():
