@@ -1,3 +1,9 @@
+from utils.auth import exigir_login
+from utils.auth import mostrar_usuario_sidebar
+
+exigir_login()
+mostrar_usuario_sidebar()
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px

@@ -17,6 +17,11 @@ st.set_page_config(
 
 aplicar_estilo()
 
+from utils.auth import exigir_login
+from utils.auth import mostrar_usuario_sidebar
+
+exigir_login()
+mostrar_usuario_sidebar()
 
 def obter_saudacao():
 
