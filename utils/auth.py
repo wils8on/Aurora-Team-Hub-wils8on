@@ -84,6 +84,11 @@ def exigir_login():
         tela_login()
         st.stop()
 
+    st.sidebar.write("DEBUG LOGIN")
+    st.sidebar.write(st.user)
+    st.sidebar.write("Email:", obter_email_usuario())
+    st.sidebar.write("Autorizado:", usuario_autorizado())
+
     if not usuario_autorizado():
 
         st.error(
