@@ -13,11 +13,16 @@ DATABASE_URL = os.getenv(
     "sqlite:///data/gestao.db"
 )
 
-engine_args = {}
+engine_args = {
+    "pool_pre_ping": True,
+    "pool_recycle": 300
+}
 
 if DATABASE_URL.startswith("sqlite"):
-    engine_args["connect_args"] = {
-        "check_same_thread": False
+    engine_args = {
+        "connect_args": {
+            "check_same_thread": False
+        }
     }
 
 engine = create_engine(

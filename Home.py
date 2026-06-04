@@ -20,8 +20,29 @@ aplicar_estilo()
 from utils.auth import exigir_login
 from utils.auth import mostrar_usuario_sidebar
 
+st.sidebar.markdown(
+    """
+<div class="aurora-sidebar-logo">
+    <div class="aurora-sidebar-icon">🌅</div>
+    <div>
+        <div class="aurora-sidebar-title">
+            Aurora
+        </div>
+        <div class="aurora-sidebar-subtitle">
+            Team Hub
+        </div>
+    </div>
+</div>
+""",
+    unsafe_allow_html=True
+)
+
+st.sidebar.divider()
+
 exigir_login()
 mostrar_usuario_sidebar()
+
+st.sidebar.divider()
 
 def obter_saudacao():
 
@@ -112,22 +133,6 @@ st.markdown(
 )
 
 
-st.markdown('<div class="aurora-header">', unsafe_allow_html=True)
-st.title("🌅 Aurora Team Hub")
-st.markdown(
-    f"""
-    <h2>👋 {obter_saudacao()}, Wilson</h2>
-    <p class="aurora-subtitle">
-        Centro inteligente de liderança, gestão de equipes e acompanhamento individual.
-    </p>
-    <p class="aurora-small">
-        Seu painel pessoal para acompanhar pessoas, reuniões, feedbacks, planos, radar e inteligência gerencial.
-    </p>
-    """,
-    unsafe_allow_html=True
-)
-st.markdown("</div>", unsafe_allow_html=True)
-
 st.divider()
 
 
@@ -135,6 +140,21 @@ indicadores = obter_indicadores_dashboard()
 alertas = obter_alertas_dashboard()
 saude = obter_saude_equipe()
 
+st.markdown(
+    f"""
+<div style="background: linear-gradient(135deg,#1D4ED8,#2563EB,#38BDF8); padding:22px 26px; border-radius:18px; margin-bottom:20px;">
+    <h1 style="color:white; margin-bottom:10px;">🌅 Aurora Team Hub</h1>
+    <h3 style="color:white;">{obter_saudacao()}, Wilson!</h3>
+    <p style="color:#E2E8F0; font-size:16px;">
+        Você possui <strong>{indicadores.get('colaboradores_ativos', 0)}</strong> colaboradores ativos,
+        <strong>{indicadores.get('planos_andamento', 0)}</strong> plano(s) em andamento,
+        <strong>{indicadores.get('reunioes_30_dias', 0)}</strong> reunião(ões) registradas
+        e <strong>{len(alertas)}</strong> alerta(s).
+    </p>
+</div>
+""",
+    unsafe_allow_html=True
+)
 
 st.subheader("Resumo Executivo")
 
@@ -166,6 +186,48 @@ with col4:
 
 
 st.divider()
+
+st.subheader("🤖 Aurora Copilot")
+
+mensagem = []
+
+if indicadores.get("reunioes_30_dias", 0) == 0:
+    mensagem.append(
+        "Nenhuma reunião registrada nos últimos 30 dias."
+    )
+
+if indicadores.get("planos_andamento", 0) > 0:
+    mensagem.append(
+        f"{indicadores.get('planos_andamento',0)} plano(s) em andamento."
+    )
+
+if len(alertas) > 0:
+    mensagem.append(
+        f"{len(alertas)} alerta(s) requer(em) atenção."
+    )
+
+if not mensagem:
+    mensagem.append(
+        "Nenhum ponto crítico identificado."
+    )
+
+st.markdown(
+    f"""
+<div style="background:#132F4C; border-radius:16px; padding:20px; border:1px solid #1E4E7A; margin-bottom:18px;">
+    <h3 style="margin-top:0; color:white;">🤖 Aurora Copilot</h3>
+    <p style="color:#CBD5E1; margin-bottom:0;">
+        {"<br>".join(mensagem)}
+    </p>
+</div>
+""",
+    unsafe_allow_html=True
+)
+
+st.page_link(
+    "pages/11_Copilot.py",
+    label="Abrir Aurora Copilot",
+    icon="🤖"
+)
 
 st.subheader("🔥 O que precisa da sua atenção hoje")
 

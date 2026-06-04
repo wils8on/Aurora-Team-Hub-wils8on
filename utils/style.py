@@ -27,18 +27,18 @@ def aplicar_estilo():
         div[data-testid="stMetric"] {
             background-color: #111827;
             border: 1px solid #374151;
-            border-radius: 14px;
+            border-radius: 16px;
             padding: 18px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-        }
-
-        div[data-testid="stMetricLabel"] {
-            color: #cbd5e1;
-            font-weight: 500;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.18);
         }
 
         div[data-testid="stMetricValue"] {
             color: white;
+            font-weight: 500;
+        }
+
+        div[data-testid="stMetricValue"] {
+            color: #0F172A;
             font-weight: 700;
         }
 
@@ -158,6 +158,44 @@ def aplicar_estilo():
             border-radius: 20px;
             background: #4b5563;
         }
+
+/* ===========================
+   Sidebar Premium
+============================ */
+
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #1E3A5F 0%, #243B53 100%);
+    border-right: 1px solid rgba(255,255,255,0.08);
+}
+
+section[data-testid="stSidebar"] * {
+    color: #F8FAFC;
+}
+
+section[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] p {
+    color: #CBD5E1;
+}
+
+section[data-testid="stSidebar"] a {
+    border-radius: 12px;
+    padding: 8px 10px;
+    transition: all .2s ease;
+}
+
+section[data-testid="stSidebar"] a:hover {
+    background-color: rgba(255,255,255,0.10);
+}
+
+section[data-testid="stSidebar"] button {
+    border-radius: 12px !important;
+    border: 1px solid rgba(255,255,255,0.18) !important;
+    background-color: rgba(255,255,255,0.06) !important;
+    color: #F8FAFC !important;
+}
+
+section[data-testid="stSidebar"] button:hover {
+    background-color: rgba(255,255,255,0.14) !important;
+}
 
         </style>
         """,

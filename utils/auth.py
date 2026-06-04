@@ -21,30 +21,22 @@ def tela_login():
 
     st.markdown(
         """
-        <div style="text-align:center; padding-top:80px;">
-            <h1>🌅 Aurora Team Hub</h1>
-            <h3>Centro inteligente de liderança e gestão de equipes</h3>
-            <p style="color:#94a3b8;">
-                Acesse com suas credenciais para continuar.
-            </p>
-        </div>
-        """,
+<div style="text-align:center; padding-top:80px;">
+    <h1>🌅 Aurora Team Hub</h1>
+    <h3>Centro inteligente de liderança e gestão de equipes</h3>
+    <p style="color:#94a3b8;">
+        Acesse com suas credenciais para continuar.
+    </p>
+</div>
+""",
         unsafe_allow_html=True
     )
 
-    col1, col2, col3 = st.columns(
-        [
-            1,
-            1,
-            1
-        ]
-    )
+    col1, col2, col3 = st.columns([1, 1, 1])
 
     with col2:
 
-        usuario = st.text_input(
-            "Usuário"
-        )
+        usuario = st.text_input("Usuário")
 
         senha = st.text_input(
             "Senha",
@@ -72,10 +64,7 @@ def tela_login():
                 ""
             )
 
-            if (
-                usuario == usuario_correto
-                and senha == senha_correta
-            ):
+            if usuario == usuario_correto and senha == senha_correta:
 
                 st.session_state["aurora_logado"] = True
                 st.session_state["aurora_usuario"] = usuario
@@ -84,9 +73,7 @@ def tela_login():
 
             else:
 
-                st.error(
-                    "Usuário ou senha inválidos."
-                )
+                st.error("Usuário ou senha inválidos.")
 
 
 def exigir_login():
@@ -103,10 +90,22 @@ def mostrar_usuario_sidebar():
 
         nome = obter_nome_usuario()
 
-        st.sidebar.markdown("---")
-        st.sidebar.markdown(f"**Usuário:** {nome}")
+        st.sidebar.divider()
 
-        if st.sidebar.button("Sair"):
+        st.sidebar.markdown(
+            f"""
+<div class="aurora-user-card">
+    <div class="aurora-user-name">👤 {nome}</div>
+    <div class="aurora-user-role">Administrador</div>
+</div>
+""",
+            unsafe_allow_html=True
+        )
+
+        if st.sidebar.button(
+            "🚪 Sair",
+            use_container_width=True
+        ):
 
             st.session_state["aurora_logado"] = False
             st.session_state["aurora_usuario"] = None
