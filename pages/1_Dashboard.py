@@ -1,13 +1,12 @@
-from utils.auth import exigir_login
-from utils.auth import mostrar_usuario_sidebar
-
-exigir_login()
-mostrar_usuario_sidebar()
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+
+from utils.auth import exigir_login
+from utils.auth import mostrar_usuario_sidebar
+from utils.style import aplicar_estilo
+from utils.datas import formatar_data_br
 
 from services.dashboard_service import (
     obter_dados_base,
@@ -21,12 +20,45 @@ from services.dashboard_service import (
 )
 
 from services.insights_service import gerar_insights_dashboard
-from utils.datas import formatar_data_br
 
 
-st.title("📊 Dashboard Estratégico")
+aplicar_estilo()
+exigir_login()
+mostrar_usuario_sidebar()
 
-st.info("Cockpit gerencial do Aurora Team Hub: indicadores, riscos, prioridades e saúde da equipe.")
+
+def card_kpi(titulo, valor, descricao, icone):
+
+    st.markdown(
+        f"""
+<div style="
+    background:#111827;
+    border:1px solid #334155;
+    border-radius:18px;
+    padding:20px;
+    min-height:120px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.18);
+">
+    <div style="font-size:14px;color:#CBD5E1;">{icone} {titulo}</div>
+    <div style="font-size:34px;font-weight:800;color:white;margin-top:8px;">{valor}</div>
+    <div style="font-size:13px;color:#94A3B8;margin-top:4px;">{descricao}</div>
+</div>
+""",
+        unsafe_allow_html=True
+    )
+
+
+def bloco_secao(titulo, subtitulo=None):
+
+    st.markdown(
+        f"""
+<div style="margin-top:28px;margin-bottom:14px;">
+    <h2 style="margin-bottom:4px;">{titulo}</h2>
+    <p style="color:#94A3B8;margin-top:0;">{subtitulo or ""}</p>
+</div>
+""",
+        unsafe_allow_html=True
+    )
 
 
 dados = obter_dados_base()
@@ -35,32 +67,80 @@ alertas = obter_alertas_dashboard()
 saude = obter_saude_equipe()
 insights = gerar_insights_dashboard()
 
-col1, col2, col3 = st.columns(3)
+
+st.markdown(
+    """
+<div style="
+    background:linear-gradient(135deg,#1D4ED8,#2563EB,#38BDF8);
+    padding:26px;
+    border-radius:20px;
+    margin-bottom:26px;
+">
+    <h1 style="color:white;margin-bottom:8px;">📊 Dashboard Estratégico</h1>
+    <p style="color:#E0F2FE;font-size:16px;margin-bottom:0;">
+        Cockpit gerencial do Aurora Team Hub: indicadores, riscos, prioridades e saúde da equipe.
+    </p>
+</div>
+""",
+    unsafe_allow_html=True
+)
+
+
+col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 with col1:
-    st.metric("👥 Colaboradores Ativos", indicadores["colaboradores_ativos"])
+    card_kpi(
+        "Colaboradores",
+        indicadores["colaboradores_ativos"],
+        "Ativos",
+        "👥"
+    )
 
 with col2:
-    st.metric("🤝 Reuniões 30 dias", indicadores["reunioes_30_dias"])
+    card_kpi(
+        "Reuniões",
+        indicadores["reunioes_30_dias"],
+        "Últimos 30 dias",
+        "🤝"
+    )
 
 with col3:
-    st.metric("📝 Feedbacks Abertos", indicadores["feedbacks_abertos"])
-
-col4, col5, col6 = st.columns(3)
+    card_kpi(
+        "Feedbacks",
+        indicadores["feedbacks_abertos"],
+        "Em aberto",
+        "📝"
+    )
 
 with col4:
-    st.metric("📋 Planos em Andamento", indicadores["planos_andamento"])
+    card_kpi(
+        "Planos",
+        indicadores["planos_andamento"],
+        "Em andamento",
+        "📋"
+    )
 
 with col5:
-    st.metric("⚠️ Planos Atrasados", indicadores["planos_atrasados"])
+    card_kpi(
+        "Atrasados",
+        indicadores["planos_atrasados"],
+        "Planos vencidos",
+        "⚠️"
+    )
 
 with col6:
-    st.metric("📡 Radar 30 dias", indicadores["radares_30_dias"])
+    card_kpi(
+        "Radar",
+        indicadores["radares_30_dias"],
+        "Últimos 30 dias",
+        "📡"
+    )
 
 
-st.divider()
-
-st.subheader("🔥 Prioridades Estratégicas")
+bloco_secao(
+    "🔥 Prioridades Estratégicas",
+    "Colaboradores, riscos e recomendações que merecem atenção imediata."
+)
 
 prioridades = []
 
@@ -93,7 +173,10 @@ st.divider()
 col_g1, col_g2 = st.columns(2)
 
 with col_g1:
-    st.subheader("📋 Distribuição dos Planos")
+    bloco_secao(
+        "📋 Distribuição dos Planos",
+        "Visão geral dos planos por status."
+    )
 
     planos = dados["planos"]
 
@@ -112,12 +195,15 @@ with col_g1:
             distribuicao_planos,
             names="Status",
             values="Quantidade",
-            hole=0.45
+            hole=0.55
         )
 
         fig_planos.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font_color="white",
             margin=dict(t=10, b=10, l=10, r=10),
-            height=350
+            height=360
         )
 
         st.plotly_chart(
@@ -129,7 +215,10 @@ with col_g1:
 
 
 with col_g2:
-    st.subheader("📡 Radar Geral da Equipe")
+    bloco_secao(
+        "📡 Radar Geral da Equipe",
+        "Média dos principais indicadores do radar."
+    )
 
     if saude:
         categorias = [
@@ -160,14 +249,22 @@ with col_g2:
         )
 
         fig_radar.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font_color="white",
             polar=dict(
+                bgcolor="rgba(0,0,0,0)",
                 radialaxis=dict(
                     visible=True,
-                    range=[0, 5]
+                    range=[0, 5],
+                    gridcolor="#334155"
+                ),
+                angularaxis=dict(
+                    gridcolor="#334155"
                 )
             ),
             showlegend=False,
-            height=350,
+            height=360,
             margin=dict(t=10, b=10, l=10, r=10)
         )
 
@@ -181,7 +278,10 @@ with col_g2:
 
 st.divider()
 
-st.subheader("🏆 Destaques e Atenções")
+bloco_secao(
+    "🏆 Destaques e Atenções",
+    "Leitura automática do momento atual da equipe."
+)
 
 radares = dados["radares"]
 
@@ -260,7 +360,10 @@ with col_d2:
 
 st.divider()
 
-st.subheader("🧠 Insights da Equipe")
+bloco_secao(
+    "🧠 Insights da Equipe",
+    "Recomendações automáticas baseadas nos indicadores registrados."
+)
 
 if insights:
 
@@ -290,7 +393,10 @@ else:
 
 st.divider()
 
-st.subheader("⚠️ Alertas Gerenciais")
+bloco_secao(
+    "⚠️ Alertas Gerenciais",
+    "Pontos críticos identificados no momento."
+)
 
 if alertas:
     for alerta in alertas:

@@ -1,6 +1,8 @@
 from utils.auth import exigir_login
 from utils.auth import mostrar_usuario_sidebar
+from utils.style import aplicar_estilo
 
+aplicar_estilo()
 exigir_login()
 mostrar_usuario_sidebar()
 
@@ -81,249 +83,56 @@ def classificar_risco_radar(valor):
 
     return f"🟢 Baixo ({valor})"
 
+def card_info(titulo, valor, icone):
 
+    st.markdown(
+        f"""
+<div style="
+    background:#111827;
+    border:1px solid #334155;
+    border-radius:18px;
+    padding:18px;
+    min-height:95px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.18);
+">
+    <div style="font-size:14px;color:#CBD5E1;">{icone} {titulo}</div>
+    <div style="
+        font-size:16px;
+        font-weight:800;
+        color:white;
+        margin-top:10px;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    ">
+        {valor or "-"}
+    </div>
+</div>
+""",
+        unsafe_allow_html=True
+    )
 
-st.title("👥 Colaboradores")
-
-st.info("Cadastro completo e acompanhamento gerencial dos colaboradores.")
-
-
-with st.expander("➕ Novo Colaborador", expanded=False):
-
-    with st.form("form_novo_colaborador"):
-
-        aba1, aba2, aba3, aba4, aba5 = st.tabs(
-            [
-                "Dados Básicos",
-                "Operacional",
-                "Desenvolvimento",
-                "Gestão",
-                "Observações"
-            ]
-        )
-
-        with aba1:
-            col1, col2 = st.columns(2)
-
-            with col1:
-                nome = st.text_input("Nome completo")
-                nome_social = st.text_input("Nome social")
-                cargo = st.text_input("Cargo atual")
-                email = st.text_input("E-mail corporativo")
-                email_pessoal = st.text_input("E-mail pessoal")
-                telefone = st.text_input("Telefone corporativo")
-                telefone_pessoal = st.text_input("Telefone pessoal")
-
-            with col2:
-                unidade = st.selectbox(
-                    "Unidade / Filial",
-                    [
-                        "Matriz",
-                        "São Caetano do Sul",
-                        "Belém",
-                        "Outro"
-                    ]
-                )
-
-                data_admissao = st.date_input(
-                    "Data de admissão",
-                    value=date.today(),
-                    min_value=DATA_MINIMA,
-                    max_value=DATA_MAXIMA,
-                    format="DD/MM/YYYY"
-                )
-
-                st.caption("Aniversário cadastrado apenas como dia e mês.")
-
-                col_dia, col_mes = st.columns(2)
-
-                with col_dia:
-                    aniversario_dia = st.number_input(
-                        "Dia do aniversário",
-                        min_value=1,
-                        max_value=31,
-                        value=1,
-                        step=1
-                    )
-
-                with col_mes:
-                    aniversario_mes = st.number_input(
-                        "Mês do aniversário",
-                        min_value=1,
-                        max_value=12,
-                        value=1,
-                        step=1
-                    )
-
-                try:
-                    data_aniversario = date(
-                        2000,
-                        int(aniversario_mes),
-                        int(aniversario_dia)
-                    )
-                except ValueError:
-                    data_aniversario = None
-                    st.warning("Dia e mês de aniversário inválidos.")
-
-                tipo_contrato = st.selectbox(
-                    "Tipo de contrato atual",
-                    [
-                        "CLT",
-                        "Estágio",
-                        "PJ",
-                        "Temporário",
-                        "Outro"
-                    ]
-                )
-
-                gestor_direto = st.text_input("Gestor direto")
-                area_equipe = st.text_input("Área / Equipe")
-
-                status = st.selectbox(
-                    "Status",
-                    [
-                        "Ativo",
-                        "Férias",
-                        "Afastado",
-                        "Desligado"
-                    ]
-                )
-
-        with aba2:
-            principais_responsabilidades = st.text_area("Principais responsabilidades")
-            projetos_atuais = st.text_area("Projetos atuais")
-            prioridades_atuais = st.text_area("Prioridades atuais")
-            entregas_responsabilidade = st.text_area("Entregas sob responsabilidade")
-            observacoes_operacionais = st.text_area("Observações operacionais")
-
-        with aba3:
-            pontos_fortes = st.text_area("Pontos fortes")
-            pontos_desenvolvimento = st.text_area("Pontos de desenvolvimento")
-            perfil_comportamental = st.text_area("Perfil comportamental")
-            interesses_desenvolvimento = st.text_area("Interesses de desenvolvimento")
-            objetivos_profissionais = st.text_area("Objetivos profissionais")
-            competencias_desenvolver = st.text_area("Competências a desenvolver")
-
-        with aba4:
-            col1, col2 = st.columns(2)
-
-            with col1:
-                frequencia_1_1 = st.selectbox(
-                    "Frequência ideal de 1:1",
-                    [
-                        "Semanal",
-                        "Quinzenal",
-                        "Mensal",
-                        "Sob demanda"
-                    ]
-                )
-
-                data_ultima_reuniao = st.date_input(
-                    "Data da última reunião",
-                    value=date.today(),
-                    min_value=DATA_MINIMA,
-                    max_value=DATA_MAXIMA,
-                    format="DD/MM/YYYY"
-                )
-
-                proxima_reuniao_recomendada = st.date_input(
-                    "Próxima reunião recomendada",
-                    value=date.today(),
-                    min_value=DATA_MINIMA,
-                    max_value=DATA_MAXIMA,
-                    format="DD/MM/YYYY"
-                )
-
-            with col2:
-                satisfacao_percebida = st.selectbox(
-                    "Nível de satisfação percebido",
-                    [
-                        "Não avaliado",
-                        "Baixo",
-                        "Médio",
-                        "Alto"
-                    ]
-                )
-
-                risco_percebido = st.selectbox(
-                    "Risco percebido",
-                    [
-                        "Baixo",
-                        "Médio",
-                        "Alto"
-                    ]
-                )
-
-                momento_atual = st.selectbox(
-                    "Momento atual",
-                    [
-                        "Estável",
-                        "Sobrecarregado",
-                        "Em evolução",
-                        "Desmotivado",
-                        "Destaque"
-                    ]
-                )
-
-        with aba5:
-            observacoes_gerais = st.text_area(
-                "Observações gerais",
-                height=220
-            )
-
-        salvar = st.form_submit_button("Salvar Colaborador")
-
-        if salvar:
-
-            if not nome:
-                st.error("Informe o nome do colaborador.")
-            elif data_aniversario is None:
-                st.error("Informe uma data de aniversário válida.")
-            else:
-                dados = {
-                    "nome": nome,
-                    "nome_social": nome_social,
-                    "cargo": cargo,
-                    "email": email,
-                    "email_pessoal": email_pessoal,
-                    "telefone": telefone,
-                    "telefone_pessoal": telefone_pessoal,
-                    "unidade": unidade,
-                    "data_admissao": data_admissao,
-                    "data_aniversario": data_aniversario,
-                    "tipo_contrato": tipo_contrato,
-                    "gestor_direto": gestor_direto,
-                    "area_equipe": area_equipe,
-                    "status": status,
-                    "principais_responsabilidades": principais_responsabilidades,
-                    "projetos_atuais": projetos_atuais,
-                    "prioridades_atuais": prioridades_atuais,
-                    "entregas_responsabilidade": entregas_responsabilidade,
-                    "observacoes_operacionais": observacoes_operacionais,
-                    "pontos_fortes": pontos_fortes,
-                    "pontos_desenvolvimento": pontos_desenvolvimento,
-                    "perfil_comportamental": perfil_comportamental,
-                    "interesses_desenvolvimento": interesses_desenvolvimento,
-                    "objetivos_profissionais": objetivos_profissionais,
-                    "competencias_desenvolver": competencias_desenvolver,
-                    "frequencia_1_1": frequencia_1_1,
-                    "data_ultima_reuniao": data_ultima_reuniao,
-                    "proxima_reuniao_recomendada": proxima_reuniao_recomendada,
-                    "satisfacao_percebida": satisfacao_percebida,
-                    "risco_percebido": risco_percebido,
-                    "momento_atual": momento_atual,
-                    "observacoes_gerais": observacoes_gerais
-                }
-
-                criar_colaborador(dados)
-
-                st.success("Colaborador cadastrado com sucesso.")
-                st.rerun()
-
+st.markdown(
+    """
+    <div style="
+        background:linear-gradient(135deg,#1D4ED8,#2563EB,#38BDF8);
+        padding:26px;
+        border-radius:20px;
+        margin-bottom:26px;
+    ">
+        <h1 style="color:white;margin-bottom:8px;">👥 Colaboradores 360°</h1>
+        <p style="color:#E0F2FE;font-size:16px;margin-bottom:0;">
+        Cadastro completo, acompanhamento gerencial, histórico, radar, evolução e inteligência do colaborador.
+        </p>
+    </div>
+    """,
+        unsafe_allow_html=True
+    )
 
 st.divider()
 
-st.subheader("Lista de Colaboradores")
+st.markdown("## 👥 Base de Colaboradores")
+st.caption("Visão geral dos colaboradores cadastrados no Aurora Team Hub.")
 
 colaboradores = listar_colaboradores()
 
@@ -361,7 +170,8 @@ if colaboradores:
 
     st.divider()
 
-    st.subheader("Ficha Gerencial")
+    st.markdown("## 🧭 Ficha Gerencial 360°")
+    st.caption("Selecione um colaborador para visualizar dados, histórico, tendências e recomendações.")
 
     colaborador_selecionado = st.selectbox(
         "Selecione um colaborador para visualizar a ficha",
@@ -369,25 +179,164 @@ if colaboradores:
         format_func=lambda colaborador: colaborador.nome
     )
 
-    st.markdown(f"## {colaborador_selecionado.nome}")
+    st.markdown(
+        f"""
+<div style="background:#132F4C; border:1px solid #1E4E7A; border-radius:18px; padding:24px; margin-bottom:18px; box-shadow:0 8px 24px rgba(0,0,0,0.18);">
+    <h2 style="color:white;margin-bottom:6px;">👤 {colaborador_selecionado.nome}</h2>
+    <p style="color:#CBD5E1;margin-bottom:14px;">
+        {colaborador_selecionado.cargo or "-"} • {colaborador_selecionado.tipo_contrato or "-"} • {colaborador_selecionado.status or "-"}
+    </p>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:12px;">
+        <div style="color:#CBD5E1;">📍 Unidade<br><strong style="color:white;">{colaborador_selecionado.unidade or "-"}</strong></div>
+        <div style="color:#CBD5E1;">📅 Admissão<br><strong style="color:white;">{formatar_data_br(colaborador_selecionado.data_admissao)}</strong></div>
+        <div style="color:#CBD5E1;">🎂 Aniversário<br><strong style="color:white;">{formatar_aniversario(colaborador_selecionado.data_aniversario)}</strong></div>
+        <div style="color:#CBD5E1;">🏢 Área<br><strong style="color:white;">{colaborador_selecionado.area_equipe or "-"}</strong></div>
+    </div>
+</div>
+""",
+        unsafe_allow_html=True
+    )
 
-    col1, col2, col3, col4 = st.columns(4)
 
-    with col1:
-        st.metric("Cargo", colaborador_selecionado.cargo or "-")
+    dados_360 = obter_colaborador_360(colaborador_selecionado.id)
+    if dados_360:
 
-    with col2:
-        st.metric("Contrato", colaborador_selecionado.tipo_contrato or "-")
+        colab_pdf = dados_360["colaborador"]
 
-    with col3:
-        st.metric("Momento", colaborador_selecionado.momento_atual or "-")
+        pdf_360 = gerar_pdf_colaborador_360(dados_360)
 
-    with col4:
-        st.metric("Risco", colaborador_selecionado.risco_percebido or "-")
+        nome_arquivo_360 = (
+            f"{colab_pdf['nome'].replace(' ', '_')}_relatorio_360.pdf"
+            if colab_pdf.get("nome")
+            else "relatorio_360_colaborador.pdf"
+        )
 
-    ficha1, ficha2, ficha3, ficha4, ficha5, ficha6, ficha7, ficha8, ficha9 = st.tabs(
+        st.markdown(
+        """
+<div style="background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; margin-bottom:12px;">
+    <h4 style="margin:0;color:white;">📄 Relatório Executivo</h4>
+    <p style="margin-top:8px;color:#CBD5E1;font-size:14px;">
+        Gere uma versão completa da ficha gerencial do colaborador.
+    </p>
+</div>
+""",
+        unsafe_allow_html=True
+    )
+
+        st.download_button(
+            label="📥 Baixar Relatório PDF",
+            data=pdf_360,
+            file_name=nome_arquivo_360,
+            mime="application/pdf",
+            use_container_width=True
+        )
+
+    ultimo_radar = (
+        dados_360["radares"][0]
+        if dados_360 and dados_360["radares"]
+        else None
+    )
+
+    risco_radar = (
+        ultimo_radar["risco_desgaste"]
+        if ultimo_radar
+        else "-"
+    )
+
+    colab_360 = (
+        dados_360["colaborador"]
+        if dados_360
+        else {}
+    )
+
+    st.markdown("### 📊 Indicadores Executivos")
+
+    col_a, col_b, col_c, col_d, col_e = st.columns(5)
+
+    with col_a:
+        card_info(
+            "Status",
+            colab_360.get("status", "-"),
+            "👤"
+        )
+
+    with col_b:
+        card_info(
+            "Tempo de Casa",
+            calcular_tempo_casa(colaborador_selecionado.data_admissao),
+            "📅"
+        )
+
+    with col_c:
+        card_info(
+            "Próxima 1:1",
+            formatar_data_br(
+                colab_360.get("proxima_reuniao_recomendada")
+            ),
+            "🤝"
+        )
+
+    with col_d:
+        card_info(
+            "Momento",
+            colab_360.get("momento_atual", "-"),
+            "📈"
+        )
+
+    with col_e:
+        card_info(
+            "Risco",
+            colab_360.get("risco_percebido", "-"),
+            "⚠️"
+        )
+
+    st.markdown("### 🩺 Saúde Atual")
+
+    if ultimo_radar:
+
+        col_s1, col_s2, col_s3, col_s4, col_s5 = st.columns(5)
+
+        with col_s1:
+            card_info(
+                "Motivação",
+                ultimo_radar["motivacao"],
+                "🔥"
+            )
+            
+        with col_s2:
+            card_info(
+                "Performance",
+                ultimo_radar["performance"],
+                "📊"
+            )
+
+        with col_s3:
+            card_info(
+                "Engajamento",
+                ultimo_radar["engajamento"],
+                "🤝"
+            )
+
+        with col_s4:
+            card_info(
+                "Risco Radar",
+                classificar_risco_radar(risco_radar),
+                "🚨"
+            )
+
+        with col_s5:
+            card_info(
+                "Alinhamento",
+                ultimo_radar["alinhamento_equipe"],
+                "🧭"
+            )
+
+    else:
+        st.info("Ainda não há registro de Radar para este colaborador.")
+
+    st.divider()
+    ficha1, ficha2, ficha3, ficha4, ficha5, ficha6, ficha7, ficha8 = st.tabs(
         [
-            "360°",
             "Tendências",
             "Resumo",
             "Operacional",
@@ -400,348 +349,6 @@ if colaboradores:
     )
 
     with ficha1:
-        st.subheader("Visão 360° do Colaborador")
-
-        dados_360 = obter_colaborador_360(colaborador_selecionado.id)
-
-        resumo_ia = gerar_resumo_colaborador(
-            dados_360
-        )
-
-        st.subheader(
-            "🤖 Resumo Executivo Inteligente"
-        )
-
-        st.markdown(
-            resumo_ia["diagnostico"]
-        )
-
-        st.markdown(
-            resumo_ia["recomendacao"]
-        )
-
-        copilot = gerar_preparacao_1_1(
-            dados_360
-        )
-
-        pauta_ia = gerar_pauta_1_1(
-            dados_360
-        )
-
-        st.divider()
-
-        st.subheader("🤖 Aurora Copilot • Preparação para 1:1")
-
-        st.markdown("### 📋 Situação Atual")
-
-        for item in copilot["resumo"]:
-            st.write(f"• {item}")
-
-        if copilot["riscos"]:
-
-            st.markdown("### ⚠️ Pontos de Atenção")
-
-            for item in copilot["riscos"]:
-                st.warning(item)
-
-        if copilot["perguntas"]:
-
-            st.markdown("### 💬 Perguntas Sugeridas")
-
-            for pergunta in copilot["perguntas"]:
-                st.info(pergunta)
-
-        st.markdown("### 🎯 Próximos Passos Recomendados")
-
-        for item in copilot["proximos_passos"]:
-            st.success(item)
-
-        st.divider()
-
-        st.subheader("📋 Aurora Copilot 2.0 • Pauta Inteligente")
-
-        st.markdown("### 🎯 Objetivo da Reunião")
-
-        for item in pauta_ia["objetivo"]:
-            st.success(item)
-
-        if pauta_ia["assuntos_sensiveis"]:
-
-            st.markdown("### ⚠️ Assuntos Sensíveis")
-
-            for item in pauta_ia["assuntos_sensiveis"]:
-                st.warning(item)
-
-        st.markdown("### 📋 Pauta Recomendada")
-
-        for indice, item in enumerate(
-            pauta_ia["pauta"],
-            start=1
-        ):
-            st.info(
-                f"{indice}. {item}"
-            )
-
-        st.divider()
-
-        if dados_360:
-
-            colab = dados_360["colaborador"]
-
-            pdf_360 = gerar_pdf_colaborador_360(dados_360)
-
-            nome_arquivo_360 = (
-                f"{colab['nome'].replace(' ', '_')}_relatorio_360.pdf"
-                if colab.get("nome")
-                else "relatorio_360_colaborador.pdf"
-            )
-
-            st.download_button(
-                label="📄 Baixar Relatório 360° em PDF",
-                data=pdf_360,
-                file_name=nome_arquivo_360,
-                mime="application/pdf",
-                use_container_width=True
-            )
-
-            st.divider()
-
-            ultimo_radar = (
-                dados_360["radares"][0]
-                if dados_360["radares"]
-                else None
-            )
-
-            risco_radar = (
-                ultimo_radar["risco_desgaste"]
-                if ultimo_radar
-                else "-"
-            )
-
-            col_a, col_b, col_c, col_d, col_e = st.columns(5)
-
-            with col_a:
-                st.metric("Status", colab["status"] or "-")
-
-            with col_b:
-                st.metric(
-                    "Tempo de Casa",
-                    calcular_tempo_casa(colaborador_selecionado.data_admissao)
-                )
-
-            with col_c:
-                st.metric(
-                    "Próxima 1:1",
-                    formatar_data_br(colab["proxima_reuniao_recomendada"])
-                )
-
-            with col_d:
-                st.metric("Momento", colab["momento_atual"] or "-")
-
-            with col_e:
-                st.metric("Risco Gerencial", colab["risco_percebido"] or "-")
-
-            st.divider()
-
-            col1, col2, col3, col4 = st.columns(4)
-
-            with col1:
-                ultima_reuniao = (
-                    dados_360["reunioes"][0]["data"]
-                    if dados_360["reunioes"]
-                    else None
-                )
-                st.metric("Última reunião", formatar_data_br(ultima_reuniao))
-
-            with col2:
-                ultimo_feedback = (
-                    dados_360["feedbacks"][0]["data"]
-                    if dados_360["feedbacks"]
-                    else None
-                )
-                st.metric("Último feedback", formatar_data_br(ultimo_feedback))
-
-            with col3:
-                planos_abertos = [
-                    plano for plano in dados_360["planos"]
-                    if plano["status"] in ["Pendente", "Em andamento"]
-                ]
-                st.metric("Planos abertos", len(planos_abertos))
-
-            with col4:
-                st.metric(
-                    "Risco Radar",
-                    classificar_risco_radar(risco_radar)
-                )
-
-            st.divider()
-
-            st.subheader("Saúde Atual")
-
-            if ultimo_radar:
-
-                col1, col2, col3, col4, col5 = st.columns(5)
-
-                with col1:
-                    st.metric("Motivação", ultimo_radar["motivacao"])
-
-                with col2:
-                    st.metric("Performance", ultimo_radar["performance"])
-
-                with col3:
-                    st.metric("Engajamento", ultimo_radar["engajamento"])
-
-                with col4:
-                    st.metric("Risco", ultimo_radar["risco_desgaste"])
-
-                with col5:
-                    st.metric("Alinhamento", ultimo_radar["alinhamento_equipe"])
-
-            else:
-                st.info("Ainda não há registro de Radar para este colaborador.")
-
-            st.divider()
-
-            aba_360_1, aba_360_2, aba_360_3, aba_360_4, aba_360_5, aba_360_6 = st.tabs(
-                [
-                    "Reuniões",
-                    "Feedbacks",
-                    "Planos",
-                    "Radar",
-                    "Notas",
-                    "Evoluções"
-                ]
-            )
-
-            with aba_360_1:
-                if dados_360["reunioes"]:
-                    st.dataframe(
-                        pd.DataFrame(
-                            [
-                                {
-                                    "Data": formatar_data_br(item["data"]),
-                                    "Tipo": item["tipo"],
-                                    "Status": item["status"],
-                                    "Assunto": item["assunto_principal"],
-                                    "Resumo": item["resumo_final"]
-                                }
-                                for item in dados_360["reunioes"]
-                            ]
-                        ),
-                        use_container_width=True,
-                        hide_index=True
-                    )
-                else:
-                    st.info("Nenhuma reunião registrada para este colaborador.")
-
-            with aba_360_2:
-                if dados_360["feedbacks"]:
-                    st.dataframe(
-                        pd.DataFrame(
-                            [
-                                {
-                                    "Data": formatar_data_br(item["data"]),
-                                    "Tipo": item["tipo"],
-                                    "Origem": item["origem"],
-                                    "Status": item["status_acompanhamento"],
-                                    "Contexto": item["contexto"]
-                                }
-                                for item in dados_360["feedbacks"]
-                            ]
-                        ),
-                        use_container_width=True,
-                        hide_index=True
-                    )
-                else:
-                    st.info("Nenhum feedback registrado para este colaborador.")
-
-            with aba_360_3:
-                if dados_360["planos"]:
-                    st.dataframe(
-                        pd.DataFrame(
-                            [
-                                {
-                                    "Prazo": formatar_data_br(item["prazo"]),
-                                    "Título": item["titulo"],
-                                    "Prioridade": item["prioridade"],
-                                    "Status": item["status"]
-                                }
-                                for item in dados_360["planos"]
-                            ]
-                        ),
-                        use_container_width=True,
-                        hide_index=True
-                    )
-                else:
-                    st.info("Nenhum plano de ação registrado para este colaborador.")
-
-            with aba_360_4:
-                if dados_360["radares"]:
-                    st.dataframe(
-                        pd.DataFrame(
-                            [
-                                {
-                                    "Data": formatar_data_br(item["data_registro"]),
-                                    "Motivação": item["motivacao"],
-                                    "Performance": item["performance"],
-                                    "Engajamento": item["engajamento"],
-                                    "Risco": item["risco_desgaste"],
-                                    "Alinhamento": item["alinhamento_equipe"]
-                                }
-                                for item in dados_360["radares"]
-                            ]
-                        ),
-                        use_container_width=True,
-                        hide_index=True
-                    )
-                else:
-                    st.info("Nenhum radar registrado para este colaborador.")
-
-            with aba_360_5:
-                if dados_360["notas"]:
-                    st.dataframe(
-                        pd.DataFrame(
-                            [
-                                {
-                                    "Data": formatar_data_br(item["data"]),
-                                    "Título": item["titulo"],
-                                    "Categoria": item["categoria"],
-                                    "Prioridade": item["prioridade"],
-                                    "Conteúdo": item["conteudo"]
-                                }
-                                for item in dados_360["notas"]
-                            ]
-                        ),
-                        use_container_width=True,
-                        hide_index=True
-                    )
-                else:
-                    st.info("Nenhuma nota registrada para este colaborador.")
-
-            with aba_360_6:
-                if dados_360["evolucoes"]:
-                    st.dataframe(
-                        pd.DataFrame(
-                            [
-                                {
-                                    "Data": formatar_data_br(item["data"]),
-                                    "Tipo": item["tipo_evolucao"],
-                                    "Cargo anterior": item["cargo_anterior"],
-                                    "Novo cargo": item["cargo_novo"],
-                                    "Contrato anterior": item["contrato_anterior"],
-                                    "Novo contrato": item["contrato_novo"],
-                                    "Motivo": item["motivo"]
-                                }
-                                for item in dados_360["evolucoes"]
-                            ]
-                        ),
-                        use_container_width=True,
-                        hide_index=True
-                    )
-                else:
-                    st.info("Nenhuma evolução registrada para este colaborador.")
-
-    with ficha2:
         st.subheader("📈 Tendências do Radar")
 
         dados_tendencia = obter_colaborador_360(colaborador_selecionado.id)
@@ -913,7 +520,7 @@ if colaboradores:
                 hide_index=True
             )
 
-    with ficha3:
+    with ficha2:
         st.write("**Nome social:**", colaborador_selecionado.nome_social or "-")
         st.write("**E-mail corporativo:**", colaborador_selecionado.email or "-")
         st.write("**E-mail pessoal:**", colaborador_selecionado.email_pessoal or "-")
@@ -928,7 +535,7 @@ if colaboradores:
         st.write("**Área / Equipe:**", colaborador_selecionado.area_equipe or "-")
         st.write("**Status:**", colaborador_selecionado.status or "-")
 
-    with ficha4:
+    with ficha3:
         st.write("**Principais responsabilidades:**")
         st.write(colaborador_selecionado.principais_responsabilidades or "-")
 
@@ -941,7 +548,7 @@ if colaboradores:
         st.write("**Entregas sob responsabilidade:**")
         st.write(colaborador_selecionado.entregas_responsabilidade or "-")
 
-    with ficha5:
+    with ficha4:
         st.write("**Pontos fortes:**")
         st.write(colaborador_selecionado.pontos_fortes or "-")
 
@@ -960,7 +567,7 @@ if colaboradores:
         st.write("**Competências a desenvolver:**")
         st.write(colaborador_selecionado.competencias_desenvolver or "-")
 
-    with ficha6:
+    with ficha5:
         st.write("**Frequência ideal de 1:1:**", colaborador_selecionado.frequencia_1_1 or "-")
 
         st.write(
@@ -977,7 +584,7 @@ if colaboradores:
         st.write("**Risco percebido:**", colaborador_selecionado.risco_percebido or "-")
         st.write("**Momento atual:**", colaborador_selecionado.momento_atual or "-")
 
-    with ficha7:
+    with ficha6:
         st.subheader("Histórico de Evoluções")
 
         with st.expander("➕ Registrar Evolução", expanded=False):
@@ -1092,7 +699,7 @@ if colaboradores:
         else:
             st.info("Nenhuma evolução registrada para este colaborador.")
 
-    with ficha8:
+    with ficha7:
         st.subheader("✏️ Editar Colaborador")
 
         with st.form("form_editar_colaborador"):
@@ -1430,7 +1037,7 @@ if colaboradores:
                     st.success("Colaborador atualizado com sucesso.")
                     st.rerun()
 
-    with ficha9:
+    with ficha8:
         st.write(colaborador_selecionado.observacoes_gerais or "-")
 
     st.divider()
@@ -1453,3 +1060,237 @@ if colaboradores:
 
 else:
     st.warning("Nenhum colaborador cadastrado ainda.")
+
+st.divider()
+
+with st.expander("➕ Novo Colaborador", expanded=False):
+
+    with st.form("form_novo_colaborador"):
+
+        aba1, aba2, aba3, aba4, aba5 = st.tabs(
+            [
+                "Dados Básicos",
+                "Operacional",
+                "Desenvolvimento",
+                "Gestão",
+                "Observações"
+            ]
+        )
+
+        with aba1:
+            col1, col2 = st.columns(2)
+
+            with col1:
+                nome = st.text_input("Nome completo")
+                nome_social = st.text_input("Nome social")
+                cargo = st.text_input("Cargo atual")
+                email = st.text_input("E-mail corporativo")
+                email_pessoal = st.text_input("E-mail pessoal")
+                telefone = st.text_input("Telefone corporativo")
+                telefone_pessoal = st.text_input("Telefone pessoal")
+
+            with col2:
+                unidade = st.selectbox(
+                    "Unidade / Filial",
+                    [
+                        "Matriz",
+                        "São Caetano do Sul",
+                        "Belém",
+                        "Outro"
+                    ]
+                )
+
+                data_admissao = st.date_input(
+                    "Data de admissão",
+                    value=date.today(),
+                    min_value=DATA_MINIMA,
+                    max_value=DATA_MAXIMA,
+                    format="DD/MM/YYYY"
+                )
+
+                st.caption("Aniversário cadastrado apenas como dia e mês.")
+
+                col_dia, col_mes = st.columns(2)
+
+                with col_dia:
+                    aniversario_dia = st.number_input(
+                        "Dia do aniversário",
+                        min_value=1,
+                        max_value=31,
+                        value=1,
+                        step=1
+                    )
+
+                with col_mes:
+                    aniversario_mes = st.number_input(
+                        "Mês do aniversário",
+                        min_value=1,
+                        max_value=12,
+                        value=1,
+                        step=1
+                    )
+
+                try:
+                    data_aniversario = date(
+                        2000,
+                        int(aniversario_mes),
+                        int(aniversario_dia)
+                    )
+                except ValueError:
+                    data_aniversario = None
+                    st.warning("Dia e mês de aniversário inválidos.")
+
+                tipo_contrato = st.selectbox(
+                    "Tipo de contrato atual",
+                    [
+                        "CLT",
+                        "Estágio",
+                        "PJ",
+                        "Temporário",
+                        "Outro"
+                    ]
+                )
+
+                gestor_direto = st.text_input("Gestor direto")
+                area_equipe = st.text_input("Área / Equipe")
+
+                status = st.selectbox(
+                    "Status",
+                    [
+                        "Ativo",
+                        "Férias",
+                        "Afastado",
+                        "Desligado"
+                    ]
+                )
+
+        with aba2:
+            principais_responsabilidades = st.text_area("Principais responsabilidades")
+            projetos_atuais = st.text_area("Projetos atuais")
+            prioridades_atuais = st.text_area("Prioridades atuais")
+            entregas_responsabilidade = st.text_area("Entregas sob responsabilidade")
+            observacoes_operacionais = st.text_area("Observações operacionais")
+
+        with aba3:
+            pontos_fortes = st.text_area("Pontos fortes")
+            pontos_desenvolvimento = st.text_area("Pontos de desenvolvimento")
+            perfil_comportamental = st.text_area("Perfil comportamental")
+            interesses_desenvolvimento = st.text_area("Interesses de desenvolvimento")
+            objetivos_profissionais = st.text_area("Objetivos profissionais")
+            competencias_desenvolver = st.text_area("Competências a desenvolver")
+
+        with aba4:
+            col1, col2 = st.columns(2)
+
+            with col1:
+                frequencia_1_1 = st.selectbox(
+                    "Frequência ideal de 1:1",
+                    [
+                        "Semanal",
+                        "Quinzenal",
+                        "Mensal",
+                        "Sob demanda"
+                    ]
+                )
+
+                data_ultima_reuniao = st.date_input(
+                    "Data da última reunião",
+                    value=date.today(),
+                    min_value=DATA_MINIMA,
+                    max_value=DATA_MAXIMA,
+                    format="DD/MM/YYYY"
+                )
+
+                proxima_reuniao_recomendada = st.date_input(
+                    "Próxima reunião recomendada",
+                    value=date.today(),
+                    min_value=DATA_MINIMA,
+                    max_value=DATA_MAXIMA,
+                    format="DD/MM/YYYY"
+                )
+
+            with col2:
+                satisfacao_percebida = st.selectbox(
+                    "Nível de satisfação percebido",
+                    [
+                        "Não avaliado",
+                        "Baixo",
+                        "Médio",
+                        "Alto"
+                    ]
+                )
+
+                risco_percebido = st.selectbox(
+                    "Risco percebido",
+                    [
+                        "Baixo",
+                        "Médio",
+                        "Alto"
+                    ]
+                )
+
+                momento_atual = st.selectbox(
+                    "Momento atual",
+                    [
+                        "Estável",
+                        "Sobrecarregado",
+                        "Em evolução",
+                        "Desmotivado",
+                        "Destaque"
+                    ]
+                )
+
+        with aba5:
+            observacoes_gerais = st.text_area(
+                "Observações gerais",
+                height=220
+            )
+
+        salvar = st.form_submit_button("Salvar Colaborador")
+
+        if salvar:
+
+            if not nome:
+                st.error("Informe o nome do colaborador.")
+            elif data_aniversario is None:
+                st.error("Informe uma data de aniversário válida.")
+            else:
+                dados = {
+                    "nome": nome,
+                    "nome_social": nome_social,
+                    "cargo": cargo,
+                    "email": email,
+                    "email_pessoal": email_pessoal,
+                    "telefone": telefone,
+                    "telefone_pessoal": telefone_pessoal,
+                    "unidade": unidade,
+                    "data_admissao": data_admissao,
+                    "data_aniversario": data_aniversario,
+                    "tipo_contrato": tipo_contrato,
+                    "gestor_direto": gestor_direto,
+                    "area_equipe": area_equipe,
+                    "status": status,
+                    "principais_responsabilidades": principais_responsabilidades,
+                    "projetos_atuais": projetos_atuais,
+                    "prioridades_atuais": prioridades_atuais,
+                    "entregas_responsabilidade": entregas_responsabilidade,
+                    "observacoes_operacionais": observacoes_operacionais,
+                    "pontos_fortes": pontos_fortes,
+                    "pontos_desenvolvimento": pontos_desenvolvimento,
+                    "perfil_comportamental": perfil_comportamental,
+                    "interesses_desenvolvimento": interesses_desenvolvimento,
+                    "objetivos_profissionais": objetivos_profissionais,
+                    "competencias_desenvolver": competencias_desenvolver,
+                    "frequencia_1_1": frequencia_1_1,
+                    "data_ultima_reuniao": data_ultima_reuniao,
+                    "proxima_reuniao_recomendada": proxima_reuniao_recomendada,
+                    "satisfacao_percebida": satisfacao_percebida,
+                    "risco_percebido": risco_percebido,
+                    "momento_atual": momento_atual,
+                    "observacoes_gerais": observacoes_gerais
+                }
+
+                criar_colaborador(dados)
+
+                st.success("Colaborador cadastrado com sucesso.")
+                st.rerun()

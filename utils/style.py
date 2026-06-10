@@ -32,13 +32,13 @@ def aplicar_estilo():
             box-shadow: 0 6px 18px rgba(0,0,0,0.18);
         }
 
-        div[data-testid="stMetricValue"] {
-            color: white;
+        div[data-testid="stMetricLabel"] {
+            color: #CBD5E1;
             font-weight: 500;
         }
 
         div[data-testid="stMetricValue"] {
-            color: #0F172A;
+            color: white;
             font-weight: 700;
         }
 
@@ -197,7 +197,27 @@ section[data-testid="stSidebar"] button:hover {
     background-color: rgba(255,255,255,0.14) !important;
 }
 
+.aurora-user-card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 16px;
+    padding: 14px;
+    margin-top: 8px;
+}
+
+.aurora-user-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.aurora-user-role {
+    font-size: 13px;
+    color: #CBD5E1;
+}
+
         </style>
         """,
         unsafe_allow_html=True
     )
+

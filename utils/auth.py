@@ -94,11 +94,15 @@ def mostrar_usuario_sidebar():
 
         st.sidebar.markdown(
             f"""
-<div class="aurora-user-card">
-    <div class="aurora-user-name">👤 {nome}</div>
-    <div class="aurora-user-role">Administrador</div>
-</div>
-""",
+            <div class="aurora-user-card">
+                <div class="aurora-user-name">
+                    👤 {nome}
+                </div>
+                <div class="aurora-user-role">
+                    Administrador
+                </div>
+            </div>
+            """,
             unsafe_allow_html=True
         )
 
