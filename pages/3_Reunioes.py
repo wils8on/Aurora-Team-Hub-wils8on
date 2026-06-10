@@ -1,10 +1,13 @@
+import streamlit as st
+
 from utils.auth import exigir_login
 from utils.auth import mostrar_usuario_sidebar
+from utils.style import aplicar_estilo
 
+aplicar_estilo()
 exigir_login()
 mostrar_usuario_sidebar()
 
-import streamlit as st
 import pandas as pd
 
 from datetime import date
@@ -32,9 +35,17 @@ def obter_indice(lista, valor, padrao=0):
     return padrao
 
 
-st.title("🤝 Reuniões")
-
-st.info("Gestão de reuniões 1:1, alinhamentos e acompanhamentos.")
+st.markdown(
+    """
+<div style="background:linear-gradient(135deg,#1D4ED8,#2563EB,#38BDF8); padding:26px; border-radius:20px; margin-bottom:26px;">
+    <h1 style="color:white;margin-bottom:8px;">🤝 Gestão de Reuniões</h1>
+    <p style="color:#E0F2FE;font-size:16px;margin-bottom:0;">
+        Registro, acompanhamento e histórico das reuniões 1:1, alinhamentos e conversas de desenvolvimento.
+    </p>
+</div>
+""",
+    unsafe_allow_html=True
+)
 
 
 colaboradores = listar_colaboradores()
@@ -44,195 +55,7 @@ if not colaboradores:
     st.stop()
 
 
-with st.expander("➕ Nova Reunião", expanded=False):
 
-    with st.form("form_nova_reuniao"):
-
-        aba1, aba2, aba3, aba4 = st.tabs(
-            [
-                "Dados da Reunião",
-                "Condução",
-                "Feedbacks e Decisões",
-                "Acompanhamento"
-            ]
-        )
-
-        with aba1:
-            col1, col2 = st.columns(2)
-
-            with col1:
-                colaborador = st.selectbox(
-                    "Colaborador",
-                    colaboradores,
-                    format_func=lambda item: item.nome
-                )
-
-                data_reuniao = st.date_input(
-                    "Data da reunião",
-                    value=date.today(),
-                    min_value=DATA_MINIMA,
-                    max_value=DATA_MAXIMA,
-                    format="DD/MM/YYYY"
-                )
-
-                tipo = st.selectbox(
-                    "Tipo de reunião",
-                    [
-                        "1:1",
-                        "Alinhamento",
-                        "Feedback",
-                        "Acompanhamento",
-                        "Desenvolvimento",
-                        "Informal"
-                    ]
-                )
-
-            with col2:
-                status = st.selectbox(
-                    "Status",
-                    [
-                        "Agendada",
-                        "Realizada",
-                        "Cancelada",
-                        "Reagendada"
-                    ]
-                )
-
-                formato = st.selectbox(
-                    "Formato",
-                    [
-                        "Presencial",
-                        "Online",
-                        "Híbrido"
-                    ]
-                )
-
-                prioridade = st.selectbox(
-                    "Prioridade do acompanhamento",
-                    [
-                        "Baixa",
-                        "Média",
-                        "Alta",
-                        "Crítica"
-                    ]
-                )
-
-            assunto_principal = st.text_input("Assunto principal")
-
-            pauta = st.text_area(
-                "Pauta da reunião",
-                height=150
-            )
-
-        with aba2:
-            humor_percebido = st.selectbox(
-                "Humor percebido do colaborador",
-                [
-                    "Não avaliado",
-                    "Tranquilo",
-                    "Motivado",
-                    "Sobrecarregado",
-                    "Preocupado",
-                    "Desmotivado",
-                    "Irritado",
-                    "Entusiasmado"
-                ]
-            )
-
-            situacao_atual = st.text_area(
-                "Como o colaborador se encontra no momento?",
-                height=120
-            )
-
-            dificuldades_relatadas = st.text_area(
-                "Dificuldades relatadas",
-                height=120
-            )
-
-            pontos_positivos = st.text_area(
-                "Pontos positivos relatados",
-                height=120
-            )
-
-        with aba3:
-            feedback_recebido = st.text_area(
-                "Feedback recebido pelo gestor",
-                height=120
-            )
-
-            feedback_dado = st.text_area(
-                "Feedback dado ao colaborador",
-                height=120
-            )
-
-            decisoes_tomadas = st.text_area(
-                "Decisões tomadas",
-                height=120
-            )
-
-            combinados = st.text_area(
-                "Combinados definidos",
-                height=120
-            )
-
-        with aba4:
-            proximos_passos = st.text_area(
-                "Próximos passos",
-                height=120
-            )
-
-            resumo_final = st.text_area(
-                "Resumo final da reunião",
-                height=150
-            )
-
-            follow_up = st.selectbox(
-                "Precisa follow-up?",
-                [
-                    "Não",
-                    "Sim"
-                ]
-            )
-
-        salvar = st.form_submit_button("Salvar Reunião")
-
-        if salvar:
-
-            if not assunto_principal:
-                st.error("Informe o assunto principal da reunião.")
-            else:
-                dados = {
-                    "colaborador_id": colaborador.id,
-                    "data": data_reuniao,
-                    "tipo": tipo,
-                    "status": status,
-                    "formato": formato,
-                    "assunto_principal": assunto_principal,
-                    "pauta": pauta,
-                    "humor_percebido": humor_percebido,
-                    "situacao_atual": situacao_atual,
-                    "dificuldades_relatadas": dificuldades_relatadas,
-                    "pontos_positivos": pontos_positivos,
-                    "feedback_recebido": feedback_recebido,
-                    "feedback_dado": feedback_dado,
-                    "decisoes_tomadas": decisoes_tomadas,
-                    "combinados": combinados,
-                    "proximos_passos": proximos_passos,
-                    "resumo_final": resumo_final,
-                    "follow_up": follow_up,
-                    "prioridade": prioridade
-                }
-
-                criar_reuniao(dados)
-
-                if status == "Realizada":
-                    atualizar_datas_reuniao_colaborador(
-                        colaborador.id,
-                        data_reuniao
-                    )
-
-                st.success("Reunião cadastrada com sucesso.")
-                st.rerun()
 
 
 st.divider()
@@ -611,3 +434,195 @@ if reunioes:
 
 else:
     st.warning("Nenhuma reunião cadastrada ainda.")
+
+st.divider()
+
+with st.expander("➕ Nova Reunião", expanded=False):
+
+    with st.form("form_nova_reuniao"):
+
+        aba1, aba2, aba3, aba4 = st.tabs(
+            [
+                "Dados da Reunião",
+                "Condução",
+                "Feedbacks e Decisões",
+                "Acompanhamento"
+            ]
+        )
+
+        with aba1:
+            col1, col2 = st.columns(2)
+
+            with col1:
+                colaborador = st.selectbox(
+                    "Colaborador",
+                    colaboradores,
+                    format_func=lambda item: item.nome
+                )
+
+                data_reuniao = st.date_input(
+                    "Data da reunião",
+                    value=date.today(),
+                    min_value=DATA_MINIMA,
+                    max_value=DATA_MAXIMA,
+                    format="DD/MM/YYYY"
+                )
+
+                tipo = st.selectbox(
+                    "Tipo de reunião",
+                    [
+                        "1:1",
+                        "Alinhamento",
+                        "Feedback",
+                        "Acompanhamento",
+                        "Desenvolvimento",
+                        "Informal"
+                    ]
+                )
+
+            with col2:
+                status = st.selectbox(
+                    "Status",
+                    [
+                        "Agendada",
+                        "Realizada",
+                        "Cancelada",
+                        "Reagendada"
+                    ]
+                )
+
+                formato = st.selectbox(
+                    "Formato",
+                    [
+                        "Presencial",
+                        "Online",
+                        "Híbrido"
+                    ]
+                )
+
+                prioridade = st.selectbox(
+                    "Prioridade do acompanhamento",
+                    [
+                        "Baixa",
+                        "Média",
+                        "Alta",
+                        "Crítica"
+                    ]
+                )
+
+            assunto_principal = st.text_input("Assunto principal")
+
+            pauta = st.text_area(
+                "Pauta da reunião",
+                height=150
+            )
+
+        with aba2:
+            humor_percebido = st.selectbox(
+                "Humor percebido do colaborador",
+                [
+                    "Não avaliado",
+                    "Tranquilo",
+                    "Motivado",
+                    "Sobrecarregado",
+                    "Preocupado",
+                    "Desmotivado",
+                    "Irritado",
+                    "Entusiasmado"
+                ]
+            )
+
+            situacao_atual = st.text_area(
+                "Como o colaborador se encontra no momento?",
+                height=120
+            )
+
+            dificuldades_relatadas = st.text_area(
+                "Dificuldades relatadas",
+                height=120
+            )
+
+            pontos_positivos = st.text_area(
+                "Pontos positivos relatados",
+                height=120
+            )
+
+        with aba3:
+            feedback_recebido = st.text_area(
+                "Feedback recebido pelo gestor",
+                height=120
+            )
+
+            feedback_dado = st.text_area(
+                "Feedback dado ao colaborador",
+                height=120
+            )
+
+            decisoes_tomadas = st.text_area(
+                "Decisões tomadas",
+                height=120
+            )
+
+            combinados = st.text_area(
+                "Combinados definidos",
+                height=120
+            )
+
+        with aba4:
+            proximos_passos = st.text_area(
+                "Próximos passos",
+                height=120
+            )
+
+            resumo_final = st.text_area(
+                "Resumo final da reunião",
+                height=150
+            )
+
+            follow_up = st.selectbox(
+                "Precisa follow-up?",
+                [
+                    "Não",
+                    "Sim"
+                ]
+            )
+
+        salvar = st.form_submit_button("Salvar Reunião")
+
+        if salvar:
+
+            if not assunto_principal:
+                st.error("Informe o assunto principal da reunião.")
+            else:
+                dados = {
+                    "colaborador_id": colaborador.id,
+                    "data": data_reuniao,
+                    "tipo": tipo,
+                    "status": status,
+                    "formato": formato,
+                    "assunto_principal": assunto_principal,
+                    "pauta": pauta,
+                    "humor_percebido": humor_percebido,
+                    "situacao_atual": situacao_atual,
+                    "dificuldades_relatadas": dificuldades_relatadas,
+                    "pontos_positivos": pontos_positivos,
+                    "feedback_recebido": feedback_recebido,
+                    "feedback_dado": feedback_dado,
+                    "decisoes_tomadas": decisoes_tomadas,
+                    "combinados": combinados,
+                    "proximos_passos": proximos_passos,
+                    "resumo_final": resumo_final,
+                    "follow_up": follow_up,
+                    "prioridade": prioridade
+                }
+
+                criar_reuniao(dados)
+
+                if status == "Realizada":
+                    atualizar_datas_reuniao_colaborador(
+                        colaborador.id,
+                        data_reuniao
+                    )
+
+                st.success("Reunião cadastrada com sucesso.")
+                st.rerun()
