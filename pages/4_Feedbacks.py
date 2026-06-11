@@ -1,10 +1,13 @@
+import streamlit as st
+
 from utils.auth import exigir_login
 from utils.auth import mostrar_usuario_sidebar
+from utils.style import aplicar_estilo
 
+aplicar_estilo()
 exigir_login()
 mostrar_usuario_sidebar()
 
-import streamlit as st
 import pandas as pd
 
 from datetime import date
@@ -16,6 +19,7 @@ from services.feedbacks_service import editar_feedback
 from services.feedbacks_service import excluir_feedback
 
 from utils.datas import formatar_data_br
+from services.relatorios_service import gerar_pdf_feedback
 
 
 DATA_MINIMA = date(1950, 1, 1)
@@ -30,9 +34,17 @@ def obter_indice(lista, valor, padrao=0):
     return padrao
 
 
-st.title("📝 Feedbacks")
-
-st.info("Registre, acompanhe e revise feedbacks da equipe.")
+st.markdown(
+    """
+<div style="background:linear-gradient(135deg,#1D4ED8,#2563EB,#38BDF8); padding:26px; border-radius:20px; margin-bottom:26px;">
+    <h1 style="color:white;margin-bottom:8px;">📝 Gestão de Feedbacks</h1>
+    <p style="color:#E0F2FE;font-size:16px;margin-bottom:0;">
+        Registre, acompanhe e revise feedbacks, reconhecimentos e pontos de desenvolvimento da equipe.
+    </p>
+</div>
+""",
+    unsafe_allow_html=True
+)
 
 
 colaboradores = listar_colaboradores()
@@ -41,150 +53,65 @@ if not colaboradores:
     st.warning("Cadastre pelo menos um colaborador antes de registrar feedbacks.")
     st.stop()
 
-
-with st.expander("➕ Novo Feedback", expanded=False):
-
-    with st.form("form_novo_feedback"):
-
-        aba1, aba2, aba3 = st.tabs(
-            [
-                "Dados do Feedback",
-                "Análise",
-                "Acompanhamento"
-            ]
-        )
-
-        with aba1:
-            col1, col2 = st.columns(2)
-
-            with col1:
-                colaborador = st.selectbox(
-                    "Colaborador",
-                    colaboradores,
-                    format_func=lambda item: item.nome
-                )
-
-                data_feedback = st.date_input(
-                    "Data do feedback",
-                    value=date.today(),
-                    min_value=DATA_MINIMA,
-                    max_value=DATA_MAXIMA,
-                    format="DD/MM/YYYY"
-                )
-
-                origem = st.selectbox(
-                    "Origem",
-                    [
-                        "Reunião",
-                        "Observação",
-                        "Entrega",
-                        "Alinhamento",
-                        "Situação específica"
-                    ]
-                )
-
-            with col2:
-                tipo = st.selectbox(
-                    "Tipo de feedback",
-                    [
-                        "Positivo",
-                        "Desenvolvimento",
-                        "Correção de rota",
-                        "Reconhecimento",
-                        "Alinhamento"
-                    ]
-                )
-
-                status_acompanhamento = st.selectbox(
-                    "Status do acompanhamento",
-                    [
-                        "Aberto",
-                        "Em acompanhamento",
-                        "Revisado",
-                        "Concluído",
-                        "Cancelado"
-                    ]
-                )
-
-                data_revisao = st.date_input(
-                    "Data de revisão",
-                    value=date.today(),
-                    min_value=DATA_MINIMA,
-                    max_value=DATA_MAXIMA,
-                    format="DD/MM/YYYY"
-                )
-
-            contexto = st.text_area(
-                "Contexto",
-                height=120
-            )
-
-            comportamento_observado = st.text_area(
-                "Comportamento observado",
-                height=120
-            )
-
-        with aba2:
-            impacto_percebido = st.text_area(
-                "Impacto percebido",
-                height=120
-            )
-
-            leitura_gestor = st.text_area(
-                "Leitura do gestor",
-                height=120
-            )
-
-            orientacao_dada = st.text_area(
-                "Orientação dada",
-                height=120
-            )
-
-            reacao_colaborador = st.text_area(
-                "Reação do colaborador",
-                height=120
-            )
-
-        with aba3:
-            plano_melhoria = st.text_area(
-                "Plano de melhoria / acompanhamento",
-                height=160
-            )
-
-        salvar = st.form_submit_button("Salvar Feedback")
-
-        if salvar:
-
-            if not contexto:
-                st.error("Informe ao menos o contexto do feedback.")
-            else:
-                dados = {
-                    "colaborador_id": colaborador.id,
-                    "data": data_feedback,
-                    "origem": origem,
-                    "tipo": tipo,
-                    "contexto": contexto,
-                    "comportamento_observado": comportamento_observado,
-                    "impacto_percebido": impacto_percebido,
-                    "leitura_gestor": leitura_gestor,
-                    "orientacao_dada": orientacao_dada,
-                    "reacao_colaborador": reacao_colaborador,
-                    "plano_melhoria": plano_melhoria,
-                    "data_revisao": data_revisao,
-                    "status_acompanhamento": status_acompanhamento
-                }
-
-                criar_feedback(dados)
-
-                st.success("Feedback cadastrado com sucesso.")
-                st.rerun()
-
-
 st.divider()
 
 st.subheader("Histórico de Feedbacks")
 
 feedbacks = listar_feedbacks()
+
+total_feedbacks = len(feedbacks)
+
+total_reconhecimentos = len(
+    [
+        f for f in feedbacks
+        if f["tipo"] == "Reconhecimento"
+    ]
+)
+
+total_desenvolvimento = len(
+    [
+        f for f in feedbacks
+        if f["tipo"] == "Desenvolvimento"
+    ]
+)
+
+total_abertos = len(
+    [
+        f for f in feedbacks
+        if f["status_acompanhamento"] in [
+            "Aberto",
+            "Em acompanhamento"
+        ]
+    ]
+)
+
+col_k1, col_k2, col_k3, col_k4 = st.columns(4)
+
+with col_k1:
+    st.metric(
+        "Feedbacks",
+        total_feedbacks
+    )
+
+with col_k2:
+    st.metric(
+        "Reconhecimentos",
+        total_reconhecimentos
+    )
+
+with col_k3:
+    st.metric(
+        "Desenvolvimento",
+        total_desenvolvimento
+    )
+
+with col_k4:
+    st.metric(
+        "Pendentes",
+        total_abertos
+    )
+
+st.divider()
 
 if feedbacks:
 
@@ -221,19 +148,50 @@ if feedbacks:
         format_func=lambda item: f"{formatar_data_br(item['data'])} | {item['colaborador_nome']} | {item['tipo']}"
     )
 
-    col1, col2, col3, col4 = st.columns(4)
+    st.markdown(
+        f"""
+<div style="background:#132F4C; border:1px solid #1E4E7A; border-radius:18px; padding:24px; margin-bottom:18px;">
+    <h2 style="color:white;margin-bottom:8px;">📝 {feedback_selecionado["tipo"] or "Feedback"}</h2>
+    <p style="color:white;font-size:24px;font-weight:600;margin-bottom:8px;">{feedback_selecionado["colaborador_nome"] or "-"}</p>
+    <p style="color:#CBD5E1;margin-bottom:16px;">{formatar_data_br(feedback_selecionado["data"])}</p>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px;">
+        <div><span style="color:#CBD5E1;">📋 Tipo</span><br><strong style="color:white;">{feedback_selecionado["tipo"] or "-"}</strong></div>
+        <div><span style="color:#CBD5E1;">📍 Origem</span><br><strong style="color:white;">{feedback_selecionado["origem"] or "-"}</strong></div>
+        <div><span style="color:#CBD5E1;">📅 Revisão</span><br><strong style="color:white;">{formatar_data_br(feedback_selecionado["data_revisao"])}</strong></div>
+        <div><span style="color:#CBD5E1;">🔄 Status</span><br><strong style="color:white;">{feedback_selecionado["status_acompanhamento"] or "-"}</strong></div>
+    </div>
+</div>
+""",
+        unsafe_allow_html=True
+    )
 
-    with col1:
-        st.metric("Colaborador", feedback_selecionado["colaborador_nome"] or "-")
+    pdf_feedback = gerar_pdf_feedback(feedback_selecionado)
 
-    with col2:
-        st.metric("Tipo", feedback_selecionado["tipo"] or "-")
+    nome_arquivo_feedback = (
+        f"relatorio_feedback_"
+        f"{feedback_selecionado['colaborador_nome'].replace(' ', '_').lower()}_"
+        f"{feedback_selecionado['data']}.pdf"
+    )
 
-    with col3:
-        st.metric("Origem", feedback_selecionado["origem"] or "-")
+    st.markdown(
+        """
+<div style="background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; margin-bottom:12px;">
+    <h4 style="margin:0;color:white;">📄 Relatório do Feedback</h4>
+    <p style="margin-top:8px;color:#CBD5E1;font-size:14px;">
+        Gere uma versão em PDF com os principais dados deste feedback.
+    </p>
+</div>
+""",
+        unsafe_allow_html=True
+    )
 
-    with col4:
-        st.metric("Status", feedback_selecionado["status_acompanhamento"] or "-")
+    st.download_button(
+        label="📥 Baixar Feedback PDF",
+        data=pdf_feedback,
+        file_name=nome_arquivo_feedback,
+        mime="application/pdf",
+        use_container_width=True
+    )
 
     ficha1, ficha2, ficha3, ficha4 = st.tabs(
         [
@@ -245,33 +203,68 @@ if feedbacks:
     )
 
     with ficha1:
-        st.write("**Data:**", formatar_data_br(feedback_selecionado["data"]))
-        st.write("**Data de revisão:**", formatar_data_br(feedback_selecionado["data_revisao"]))
+        st.markdown(
+            f"""
+<div style="background:#0F2138; border:1px solid #1E4E7A; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h3 style="color:white;">📌 Dados do Feedback</h3>
+    <p style="color:#CBD5E1;"><strong style="color:white;">Data:</strong> {formatar_data_br(feedback_selecionado["data"])}</p>
+    <p style="color:#CBD5E1;"><strong style="color:white;">Revisão:</strong> {formatar_data_br(feedback_selecionado["data_revisao"])}</p>
+</div>
 
-        st.write("**Contexto:**")
-        st.write(feedback_selecionado["contexto"] or "-")
+<div style="background:#0F2138; border:1px solid #1E4E7A; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h3 style="color:white;">📖 Contexto</h3>
+    <p style="color:#CBD5E1;">{feedback_selecionado["contexto"] or "-"}</p>
+</div>
 
-        st.write("**Comportamento observado:**")
-        st.write(feedback_selecionado["comportamento_observado"] or "-")
+<div style="background:#0F2138; border:1px solid #1E4E7A; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h3 style="color:white;">👀 Comportamento Observado</h3>
+    <p style="color:#CBD5E1;">{feedback_selecionado["comportamento_observado"] or "-"}</p>
+</div>
+""",
+            unsafe_allow_html=True
+        )
 
     with ficha2:
-        st.write("**Impacto percebido:**")
-        st.write(feedback_selecionado["impacto_percebido"] or "-")
+        st.markdown(
+            f"""
+<div style="background:#0F2138; border:1px solid #1E4E7A; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h3 style="color:white;">📈 Impacto Percebido</h3>
+    <p style="color:#CBD5E1;">{feedback_selecionado["impacto_percebido"] or "-"}</p>
+</div>
 
-        st.write("**Leitura do gestor:**")
-        st.write(feedback_selecionado["leitura_gestor"] or "-")
+<div style="background:#0F2138; border:1px solid #1E4E7A; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h3 style="color:white;">🧠 Leitura do Gestor</h3>
+    <p style="color:#CBD5E1;">{feedback_selecionado["leitura_gestor"] or "-"}</p>
+</div>
 
-        st.write("**Orientação dada:**")
-        st.write(feedback_selecionado["orientacao_dada"] or "-")
+<div style="background:#0F2138; border:1px solid #1E4E7A; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h3 style="color:white;">🎯 Orientação Dada</h3>
+    <p style="color:#CBD5E1;">{feedback_selecionado["orientacao_dada"] or "-"}</p>
+</div>
 
-        st.write("**Reação do colaborador:**")
-        st.write(feedback_selecionado["reacao_colaborador"] or "-")
+<div style="background:#0F2138; border:1px solid #1E4E7A; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h3 style="color:white;">💬 Reação do Colaborador</h3>
+    <p style="color:#CBD5E1;">{feedback_selecionado["reacao_colaborador"] or "-"}</p>
+</div>
+""",
+            unsafe_allow_html=True
+        )
 
     with ficha3:
-        st.write("**Plano de melhoria / acompanhamento:**")
-        st.write(feedback_selecionado["plano_melhoria"] or "-")
+        st.markdown(
+            f"""
+<div style="background:#0F2138; border:1px solid #1E4E7A; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h3 style="color:white;">🚀 Plano de Desenvolvimento</h3>
+    <p style="color:#CBD5E1;">{feedback_selecionado["plano_melhoria"] or "-"}</p>
+</div>
 
-        st.write("**Status do acompanhamento:**", feedback_selecionado["status_acompanhamento"] or "-")
+<div style="background:#0F2138; border:1px solid #1E4E7A; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h3 style="color:white;">🔄 Status do Acompanhamento</h3>
+    <p style="color:#CBD5E1;">{feedback_selecionado["status_acompanhamento"] or "-"}</p>
+</div>
+""",
+            unsafe_allow_html=True
+        )
 
     with ficha4:
         st.subheader("✏️ Editar Feedback")
@@ -460,3 +453,140 @@ if feedbacks:
 
 else:
     st.warning("Nenhum feedback cadastrado ainda.")
+
+with st.expander("➕ Novo Feedback", expanded=False):
+
+    with st.form("form_novo_feedback"):
+
+        aba1, aba2, aba3 = st.tabs(
+            [
+                "Dados do Feedback",
+                "Análise",
+                "Acompanhamento"
+            ]
+        )
+
+        with aba1:
+            col1, col2 = st.columns(2)
+
+            with col1:
+                colaborador = st.selectbox(
+                    "Colaborador",
+                    colaboradores,
+                    format_func=lambda item: item.nome
+                )
+
+                data_feedback = st.date_input(
+                    "Data do feedback",
+                    value=date.today(),
+                    min_value=DATA_MINIMA,
+                    max_value=DATA_MAXIMA,
+                    format="DD/MM/YYYY"
+                )
+
+                origem = st.selectbox(
+                    "Origem",
+                    [
+                        "Reunião",
+                        "Observação",
+                        "Entrega",
+                        "Alinhamento",
+                        "Situação específica"
+                    ]
+                )
+
+            with col2:
+                tipo = st.selectbox(
+                    "Tipo de feedback",
+                    [
+                        "Positivo",
+                        "Desenvolvimento",
+                        "Correção de rota",
+                        "Reconhecimento",
+                        "Alinhamento"
+                    ]
+                )
+
+                status_acompanhamento = st.selectbox(
+                    "Status do acompanhamento",
+                    [
+                        "Aberto",
+                        "Em acompanhamento",
+                        "Revisado",
+                        "Concluído",
+                        "Cancelado"
+                    ]
+                )
+
+                data_revisao = st.date_input(
+                    "Data de revisão",
+                    value=date.today(),
+                    min_value=DATA_MINIMA,
+                    max_value=DATA_MAXIMA,
+                    format="DD/MM/YYYY"
+                )
+
+            contexto = st.text_area(
+                "Contexto",
+                height=120
+            )
+
+            comportamento_observado = st.text_area(
+                "Comportamento observado",
+                height=120
+            )
+
+        with aba2:
+            impacto_percebido = st.text_area(
+                "Impacto percebido",
+                height=120
+            )
+
+            leitura_gestor = st.text_area(
+                "Leitura do gestor",
+                height=120
+            )
+
+            orientacao_dada = st.text_area(
+                "Orientação dada",
+                height=120
+            )
+
+            reacao_colaborador = st.text_area(
+                "Reação do colaborador",
+                height=120
+            )
+
+        with aba3:
+            plano_melhoria = st.text_area(
+                "Plano de melhoria / acompanhamento",
+                height=160
+            )
+
+        salvar = st.form_submit_button("Salvar Feedback")
+
+        if salvar:
+
+            if not contexto:
+                st.error("Informe ao menos o contexto do feedback.")
+            else:
+                dados = {
+                    "colaborador_id": colaborador.id,
+                    "data": data_feedback,
+                    "origem": origem,
+                    "tipo": tipo,
+                    "contexto": contexto,
+                    "comportamento_observado": comportamento_observado,
+                    "impacto_percebido": impacto_percebido,
+                    "leitura_gestor": leitura_gestor,
+                    "orientacao_dada": orientacao_dada,
+                    "reacao_colaborador": reacao_colaborador,
+                    "plano_melhoria": plano_melhoria,
+                    "data_revisao": data_revisao,
+                    "status_acompanhamento": status_acompanhamento
+                }
+
+                criar_feedback(dados)
+
+                st.success("Feedback cadastrado com sucesso.")
+                st.rerun()
