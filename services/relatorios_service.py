@@ -127,3 +127,56 @@ def gerar_pdf_reuniao(reuniao):
 
     buffer.seek(0)
     return buffer.getvalue()
+
+def gerar_pdf_pauta_reuniao(reuniao):
+
+    from reportlab.lib.pagesizes import A4
+    from reportlab.pdfgen import canvas
+    from io import BytesIO
+
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+
+    largura, altura = A4
+    y = altura - 50
+
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.drawString(50, y, "Pauta da Reunião")
+    y -= 40
+
+    pdf.setFont("Helvetica", 11)
+
+    campos = [
+        ("Colaborador", reuniao.get("colaborador_nome", "-")),
+        ("Data", str(reuniao.get("data", "-"))),
+        ("Tipo", reuniao.get("tipo", "-")),
+        ("Formato", reuniao.get("formato", "-")),
+        ("Assunto", reuniao.get("assunto_principal", "-")),
+        ("Pauta", reuniao.get("pauta", "-")),
+        ("Prioridade", reuniao.get("prioridade", "-")),
+        ("Follow-up", reuniao.get("follow_up", "-")),
+    ]
+
+    for titulo, valor in campos:
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(50, y, f"{titulo}:")
+        y -= 16
+
+        pdf.setFont("Helvetica", 10)
+
+        texto = str(valor or "-")
+
+        for linha in texto.split("\n"):
+            pdf.drawString(70, y, linha[:95])
+            y -= 14
+
+            if y < 60:
+                pdf.showPage()
+                y = altura - 50
+
+        y -= 10
+
+    pdf.save()
+    buffer.seek(0)
+
+    return buffer.getvalue()

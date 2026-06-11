@@ -8,6 +8,27 @@ aplicar_estilo()
 exigir_login()
 mostrar_usuario_sidebar()
 
+st.markdown(
+    """
+<style>
+.stTabs [data-baseweb="tab-list"] {
+    gap: 20px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    font-size: 30px;
+    font-weight: 700;
+    padding: 16px 22px;
+}
+
+.stTabs [aria-selected="true"] {
+    color: #FFFFFF !important;
+}
+</style>
+""",
+    unsafe_allow_html=True
+)
+
 import pandas as pd
 
 from datetime import date
@@ -21,6 +42,7 @@ from services.reunioes_service import excluir_reuniao
 
 from utils.datas import formatar_data_br
 from services.relatorios_service import gerar_pdf_reuniao
+from services.relatorios_service import gerar_pdf_pauta_reuniao
 
 
 DATA_MINIMA = date(1950, 1, 1)
@@ -55,14 +77,32 @@ if not colaboradores:
     st.stop()
 
 
-
-
-
 st.divider()
 
 st.subheader("Histórico de Reuniões")
 
 reunioes = listar_reunioes()
+total_reunioes = len(reunioes)
+total_1_1 = len([r for r in reunioes if r["tipo"] == "1:1"])
+total_agendadas = len([r for r in reunioes if r["status"] == "Agendada"])
+total_followups = len([r for r in reunioes if r["follow_up"] == "Sim"])
+
+col_k1, col_k2, col_k3, col_k4 = st.columns(4)
+
+with col_k1:
+    st.metric("Reuniões", total_reunioes)
+
+with col_k2:
+    st.metric("1:1", total_1_1)
+
+with col_k3:
+    st.metric("Agendadas", total_agendadas)
+
+with col_k4:
+    st.metric("Follow-ups", total_followups)
+
+st.divider()
+
 
 if reunioes:
 
@@ -101,19 +141,74 @@ if reunioes:
         format_func=lambda item: f"{formatar_data_br(item['data'])} | {item['colaborador_nome']} | {item['assunto_principal']}"
     )
 
-    col1, col2, col3, col4 = st.columns(4)
+    st.markdown(
+        f"""
+<div style="background:#132F4C; border:1px solid #1E4E7A; border-radius:18px; padding:24px; margin-bottom:18px;">
+    <h2 style="color:white;margin-bottom:8px;">🤝 {reuniao_selecionada["assunto_principal"] or "Reunião"}</h2>
+    <p style="color:white;font-size:24px;font-weight:600;margin-bottom:8px;">
+        {reuniao_selecionada["colaborador_nome"] or "-"}
+    </p>
+    <p style="color:#CBD5E1;margin-bottom:16px;">
+        {formatar_data_br(reuniao_selecionada["data"])} • {reuniao_selecionada["formato"] or "-"}
+    </p>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px;">
+        <div><span style="color:#CBD5E1;">📋 Tipo</span><br><strong style="color:white;">{reuniao_selecionada["tipo"] or "-"}</strong></div>
+        <div><span style="color:#CBD5E1;">📌 Status</span><br><strong style="color:white;">{reuniao_selecionada["status"] or "-"}</strong></div>
+        <div><span style="color:#CBD5E1;">⭐ Prioridade</span><br><strong style="color:white;">{reuniao_selecionada["prioridade"] or "-"}</strong></div>
+        <div><span style="color:#CBD5E1;">🔄 Follow-up</span><br><strong style="color:white;">{reuniao_selecionada["follow_up"] or "-"}</strong></div>
+    </div>
+</div>
+""",
+        unsafe_allow_html=True
+    )
 
-    with col1:
-        st.metric("Colaborador", reuniao_selecionada["colaborador_nome"] or "-")
+    pdf_reuniao = gerar_pdf_reuniao(reuniao_selecionada)
 
-    with col2:
-        st.metric("Tipo", reuniao_selecionada["tipo"] or "-")
+    nome_arquivo_pdf = (
+        f"relatorio_reuniao_"
+        f"{reuniao_selecionada['colaborador_nome'].replace(' ', '_').lower()}_"
+        f"{reuniao_selecionada['data']}.pdf"
+    )
 
-    with col3:
-        st.metric("Status", reuniao_selecionada["status"] or "-")
+    pdf_pauta = gerar_pdf_pauta_reuniao(reuniao_selecionada)
 
-    with col4:
-        st.metric("Prioridade", reuniao_selecionada["prioridade"] or "-")
+    nome_arquivo_pauta = (
+        f"pauta_reuniao_"
+        f"{reuniao_selecionada['colaborador_nome'].replace(' ', '_').lower()}_"
+        f"{reuniao_selecionada['data']}.pdf"
+    )
+
+    st.markdown(
+        """
+<div style="background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; margin-bottom:12px;">
+    <h4 style="margin:0;color:white;">📄 Relatório da Reunião</h4>
+    <p style="margin-top:8px;color:#CBD5E1;font-size:14px;">
+        Gere uma versão em PDF com os principais dados desta reunião.
+    </p>
+</div>
+""",
+        unsafe_allow_html=True
+    )
+
+    col_pdf1, col_pdf2 = st.columns(2)
+
+    with col_pdf1:
+        st.download_button(
+            label="📥 Baixar Relatório PDF",
+            data=pdf_reuniao,
+            file_name=nome_arquivo_pdf,
+            mime="application/pdf",
+            use_container_width=True
+        )
+
+    with col_pdf2:
+        st.download_button(
+            label="📝 Baixar Pauta PDF",
+            data=pdf_pauta,
+            file_name=nome_arquivo_pauta,
+            mime="application/pdf",
+            use_container_width=True
+        )
 
     ficha1, ficha2, ficha3, ficha4 = st.tabs(
         [
@@ -125,62 +220,90 @@ if reunioes:
     )
 
     with ficha1:
-        st.write("**Data:**", formatar_data_br(reuniao_selecionada["data"]))
-        st.write("**Formato:**", reuniao_selecionada["formato"] or "-")
-        st.write("**Assunto principal:**", reuniao_selecionada["assunto_principal"] or "-")
+            st.markdown(
+            f"""
+<div style="background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h4 style="color:white;margin-bottom:12px;">📌 Resumo da Reunião</h4>
+    <p style="color:#CBD5E1;"><strong style="color:white;">Data:</strong> {formatar_data_br(reuniao_selecionada["data"])}</p>
+    <p style="color:#CBD5E1;"><strong style="color:white;">Formato:</strong> {reuniao_selecionada["formato"] or "-"}</p>
+    <p style="color:#CBD5E1;"><strong style="color:white;">Assunto:</strong> {reuniao_selecionada["assunto_principal"] or "-"}</p>
+</div>
 
-        st.write("**Pauta:**")
-        st.write(reuniao_selecionada["pauta"] or "-")
+<div style="background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h4 style="color:white;margin-bottom:12px;">📝 Pauta</h4>
+    <p style="color:#CBD5E1;">{reuniao_selecionada["pauta"] or "-"}</p>
+</div>
 
-        st.write("**Resumo final:**")
-        st.write(reuniao_selecionada["resumo_final"] or "-")
-
-        st.divider()
-
-        pdf_reuniao = gerar_pdf_reuniao(reuniao_selecionada)
-
-        nome_arquivo_pdf = (
-            f"relatorio_reuniao_"
-            f"{reuniao_selecionada['colaborador_nome'].replace(' ', '_').lower()}_"
-            f"{reuniao_selecionada['data']}.pdf"
+<div style="background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h4 style="color:white;margin-bottom:12px;">✅ Resumo Final</h4>
+    <p style="color:#CBD5E1;">{reuniao_selecionada["resumo_final"] or "-"}</p>
+</div>
+""",
+            unsafe_allow_html=True
         )
 
-        st.download_button(
-            label="📄 Baixar Relatório da Reunião em PDF",
-            data=pdf_reuniao,
-            file_name=nome_arquivo_pdf,
-            mime="application/pdf"
-        )
 
     with ficha2:
-        st.write("**Humor percebido:**", reuniao_selecionada["humor_percebido"] or "-")
+            st.markdown(
+            f"""
+<div style="background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h4 style="color:white;margin-bottom:12px;">🙂 Humor Percebido</h4>
+    <p style="color:#CBD5E1;">{reuniao_selecionada["humor_percebido"] or "-"}</p>
+</div>
 
-        st.write("**Situação atual:**")
-        st.write(reuniao_selecionada["situacao_atual"] or "-")
+<div style="background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h4 style="color:white;margin-bottom:12px;">🧭 Situação Atual</h4>
+    <p style="color:#CBD5E1;">{reuniao_selecionada["situacao_atual"] or "-"}</p>
+</div>
 
-        st.write("**Dificuldades relatadas:**")
-        st.write(reuniao_selecionada["dificuldades_relatadas"] or "-")
+<div style="background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h4 style="color:white;margin-bottom:12px;">⚠️ Dificuldades Relatadas</h4>
+    <p style="color:#CBD5E1;">{reuniao_selecionada["dificuldades_relatadas"] or "-"}</p>
+</div>
 
-        st.write("**Pontos positivos:**")
-        st.write(reuniao_selecionada["pontos_positivos"] or "-")
+<div style="background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h4 style="color:white;margin-bottom:12px;">✨ Pontos Positivos</h4>
+    <p style="color:#CBD5E1;">{reuniao_selecionada["pontos_positivos"] or "-"}</p>
+</div>
 
-        st.write("**Feedback recebido pelo gestor:**")
-        st.write(reuniao_selecionada["feedback_recebido"] or "-")
+<div style="background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h4 style="color:white;margin-bottom:12px;">📥 Feedback Recebido</h4>
+    <p style="color:#CBD5E1;">{reuniao_selecionada["feedback_recebido"] or "-"}</p>
+</div>
 
-        st.write("**Feedback dado ao colaborador:**")
-        st.write(reuniao_selecionada["feedback_dado"] or "-")
+<div style="background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h4 style="color:white;margin-bottom:12px;">📤 Feedback Dado</h4>
+    <p style="color:#CBD5E1;">{reuniao_selecionada["feedback_dado"] or "-"}</p>
+</div>
+""",
+            unsafe_allow_html=True
+        )
 
     with ficha3:
-        st.write("**Decisões tomadas:**")
-        st.write(reuniao_selecionada["decisoes_tomadas"] or "-")
+            st.markdown(
+            f"""
+<div style="background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h4 style="color:white;margin-bottom:12px;">🧾 Decisões Tomadas</h4>
+    <p style="color:#CBD5E1;">{reuniao_selecionada["decisoes_tomadas"] or "-"}</p>
+</div>
 
-        st.write("**Combinados:**")
-        st.write(reuniao_selecionada["combinados"] or "-")
+<div style="background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h4 style="color:white;margin-bottom:12px;">🤝 Combinados</h4>
+    <p style="color:#CBD5E1;">{reuniao_selecionada["combinados"] or "-"}</p>
+</div>
 
-        st.write("**Próximos passos:**")
-        st.write(reuniao_selecionada["proximos_passos"] or "-")
+<div style="background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h4 style="color:white;margin-bottom:12px;">➡️ Próximos Passos</h4>
+    <p style="color:#CBD5E1;">{reuniao_selecionada["proximos_passos"] or "-"}</p>
+</div>
 
-        st.write("**Precisa follow-up?:**", reuniao_selecionada["follow_up"] or "-")
+<div style="background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; margin-bottom:14px;">
+    <h4 style="color:white;margin-bottom:12px;">🔄 Follow-up</h4>
+    <p style="color:#CBD5E1;">{reuniao_selecionada["follow_up"] or "-"}</p>
+</div>
+""",
+            unsafe_allow_html=True
+        )
 
     with ficha4:
         st.subheader("✏️ Editar Reunião")
@@ -416,27 +539,6 @@ if reunioes:
 
     st.divider()
 
-    st.subheader("Excluir Reunião")
-
-    reuniao_para_excluir = st.selectbox(
-        "Selecione a reunião para excluir",
-        reunioes,
-        format_func=lambda item: f"{formatar_data_br(item['data'])} | {item['colaborador_nome']} | {item['assunto_principal']}",
-        key="excluir_reuniao"
-    )
-
-    if st.button("Excluir Reunião", type="secondary"):
-
-        excluir_reuniao(reuniao_para_excluir["id"])
-
-        st.success("Reunião excluída com sucesso.")
-        st.rerun()
-
-else:
-    st.warning("Nenhuma reunião cadastrada ainda.")
-
-st.divider()
-
 with st.expander("➕ Nova Reunião", expanded=False):
 
     with st.form("form_nova_reuniao"):
@@ -626,3 +728,21 @@ with st.expander("➕ Nova Reunião", expanded=False):
 
                 st.success("Reunião cadastrada com sucesso.")
                 st.rerun()
+
+    st.divider()
+
+st.subheader("Excluir Reunião")
+
+reuniao_para_excluir = st.selectbox(
+    "Selecione a reunião para excluir",
+    reunioes,
+    format_func=lambda item: f"{formatar_data_br(item['data'])} | {item['colaborador_nome']} | {item['assunto_principal']}",
+    key="excluir_reuniao"
+)
+
+if st.button("Excluir Reunião", type="secondary"):
+
+    excluir_reuniao(reuniao_para_excluir["id"])
+
+    st.success("Reunião excluída com sucesso.")
+    st.rerun()
