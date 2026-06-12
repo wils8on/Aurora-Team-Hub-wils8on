@@ -255,3 +255,66 @@ def gerar_pdf_feedback(feedback):
     buffer.seek(0)
 
     return buffer.getvalue()
+
+def gerar_pdf_plano(plano):
+
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+
+    largura, altura = A4
+    y = altura - 50
+
+    def escrever_titulo(texto):
+        nonlocal y
+        pdf.setFont("Helvetica-Bold", 16)
+        pdf.drawString(50, y, texto)
+        y -= 35
+
+    def escrever_campo(titulo, valor):
+        nonlocal y
+
+        if y < 80:
+            pdf.showPage()
+            y = altura - 50
+
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(50, y, f"{titulo}:")
+        y -= 16
+
+        pdf.setFont("Helvetica", 10)
+
+        texto = str(valor or "-")
+
+        for linha in texto.split("\n"):
+            while len(linha) > 95:
+                pdf.drawString(70, y, linha[:95])
+                linha = linha[95:]
+                y -= 14
+
+            pdf.drawString(70, y, linha)
+            y -= 14
+
+        y -= 8
+
+    escrever_titulo("Relatório do Plano de Ação")
+
+    campos = [
+        ("Colaborador", plano.get("colaborador_nome", "-")),
+        ("Título", plano.get("titulo", "-")),
+        ("Origem", plano.get("origem", "-")),
+        ("Data de Criação", plano.get("data_criacao", "-")),
+        ("Prazo", plano.get("prazo", "-")),
+        ("Prioridade", plano.get("prioridade", "-")),
+        ("Status", plano.get("status", "-")),
+        ("Data de Conclusão", plano.get("data_conclusao", "-")),
+        ("Descrição", plano.get("descricao", "-")),
+        ("Observações do Progresso", plano.get("observacoes_progresso", "-")),
+    ]
+
+    for titulo, valor in campos:
+        escrever_campo(titulo, valor)
+
+    pdf.save()
+    buffer.seek(0)
+
+    return buffer.getvalue()

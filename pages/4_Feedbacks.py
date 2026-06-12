@@ -17,6 +17,7 @@ from services.feedbacks_service import criar_feedback
 from services.feedbacks_service import listar_feedbacks
 from services.feedbacks_service import editar_feedback
 from services.feedbacks_service import excluir_feedback
+from services.planos_service import criar_plano
 
 from utils.datas import formatar_data_br
 from services.relatorios_service import gerar_pdf_feedback
@@ -265,6 +266,41 @@ if feedbacks:
 """,
             unsafe_allow_html=True
         )
+
+        st.divider()
+
+        st.markdown("### 🚀 Gerar Plano de Ação")
+
+        st.caption(
+            "Transforme este feedback em um plano de ação vinculado ao colaborador."
+        )
+
+        if st.button(
+            "🚀 Transformar em Plano de Ação",
+            use_container_width=True
+        ):
+
+            dados_plano = {
+                "colaborador_id": feedback_selecionado["colaborador_id"],
+                "titulo": f"Plano originado de feedback - {feedback_selecionado['tipo']}",
+                "descricao": feedback_selecionado["plano_melhoria"] or feedback_selecionado["contexto"],
+                "origem": "Feedback",
+                "data_criacao": date.today(),
+                "prazo": feedback_selecionado["data_revisao"] or date.today(),
+                "prioridade": "Média",
+                "status": "Pendente",
+                "observacoes_progresso": (
+                    f"Feedback de origem: {feedback_selecionado['tipo']}\n\n"
+                    f"Contexto:\n{feedback_selecionado['contexto'] or '-'}\n\n"
+                    f"Orientação dada:\n{feedback_selecionado['orientacao_dada'] or '-'}"
+                ),
+                "data_conclusao": None
+            }
+
+            criar_plano(dados_plano)
+
+            st.success("Plano de ação criado com sucesso a partir deste feedback.")
+            st.rerun()
 
     with ficha4:
         st.subheader("✏️ Editar Feedback")
