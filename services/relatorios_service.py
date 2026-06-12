@@ -318,3 +318,64 @@ def gerar_pdf_plano(plano):
     buffer.seek(0)
 
     return buffer.getvalue()
+
+def gerar_pdf_radar(radar):
+
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+
+    largura, altura = A4
+    y = altura - 50
+
+    def escrever_titulo(texto):
+        nonlocal y
+        pdf.setFont("Helvetica-Bold", 16)
+        pdf.drawString(50, y, texto)
+        y -= 35
+
+    def escrever_campo(titulo, valor):
+        nonlocal y
+
+        if y < 80:
+            pdf.showPage()
+            y = altura - 50
+
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(50, y, f"{titulo}:")
+        y -= 16
+
+        pdf.setFont("Helvetica", 10)
+        texto = str(valor or "-")
+
+        for linha in texto.split("\n"):
+            while len(linha) > 95:
+                pdf.drawString(70, y, linha[:95])
+                linha = linha[95:]
+                y -= 14
+
+            pdf.drawString(70, y, linha)
+            y -= 14
+
+        y -= 8
+
+    escrever_titulo("Relatório do Radar do Colaborador")
+
+    campos = [
+        ("Colaborador", radar.get("colaborador_nome", "-")),
+        ("Data do Registro", radar.get("data_registro", "-")),
+        ("Motivação", f"{radar.get('motivacao', '-')}/5"),
+        ("Performance", f"{radar.get('performance', '-')}/5"),
+        ("Carga de Trabalho", f"{radar.get('carga_trabalho', '-')}/5"),
+        ("Engajamento", f"{radar.get('engajamento', '-')}/5"),
+        ("Risco de Desgaste", f"{radar.get('risco_desgaste', '-')}/5"),
+        ("Alinhamento com a Equipe", f"{radar.get('alinhamento_equipe', '-')}/5"),
+        ("Observações", radar.get("observacoes", "-")),
+    ]
+
+    for titulo, valor in campos:
+        escrever_campo(titulo, valor)
+
+    pdf.save()
+    buffer.seek(0)
+
+    return buffer.getvalue()
