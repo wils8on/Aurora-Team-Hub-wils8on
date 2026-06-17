@@ -1,10 +1,13 @@
+import streamlit as st
+
 from utils.auth import exigir_login
 from utils.auth import mostrar_usuario_sidebar
+from utils.style import aplicar_estilo
 
+aplicar_estilo()
 exigir_login()
 mostrar_usuario_sidebar()
 
-import streamlit as st
 import pandas as pd
 
 from datetime import date
@@ -14,9 +17,17 @@ from services.dashboard_service import obter_dados_base
 from utils.datas import formatar_data_br
 
 
-st.title("📅 Agenda Inteligente")
-
-st.info("Prioridades, vencimentos, aniversários e acompanhamentos importantes.")
+st.markdown(
+    """
+<div style="background:linear-gradient(135deg,#1D4ED8,#2563EB,#38BDF8); padding:26px; border-radius:20px; margin-bottom:26px;">
+    <h1 style="color:white;margin-bottom:8px;">📅 Agenda Inteligente</h1>
+    <p style="color:#E0F2FE;font-size:16px;margin-bottom:0;">
+        Prioridades, vencimentos, aniversários, revisões e acompanhamentos importantes do gestor.
+    </p>
+</div>
+""",
+    unsafe_allow_html=True
+)
 
 
 hoje = date.today()
@@ -100,7 +111,7 @@ def classificar_urgencia_prazo(prazo):
     return "⚪ Futuro"
 
 
-st.subheader("Resumo Executivo")
+st.subheader("📊 Resumo Executivo")
 
 col1, col2, col3, col4 = st.columns(4)
 
@@ -189,15 +200,62 @@ for feedback in feedbacks_revisao:
         }
     )
 
-if prioridades:
-    st.dataframe(
-        pd.DataFrame(prioridades),
-        use_container_width=True,
-        hide_index=True
-    )
-else:
-    st.success("Nenhuma prioridade crítica para hoje. Raro, mas acontece.")
+def exibir_card_prioridade(item):
 
+    cor = "#1E4E7A"
+
+    if item["Prioridade"] == "Alta":
+        cor = "#DC2626"
+
+    elif item["Prioridade"] == "Média":
+        cor = "#D97706"
+
+    st.markdown(
+        f"""
+<div style="
+background:#0F172A;
+border-left:6px solid {cor};
+padding:18px;
+border-radius:12px;
+margin-bottom:12px;
+">
+<h4 style="margin:0;color:white;">
+{item["Tipo"]}
+</h4>
+
+<p style="margin-top:8px;color:#CBD5E1;">
+<strong style="color:white;">Colaborador:</strong> {item["Colaborador"]}<br>
+<strong style="color:white;">Descrição:</strong> {item["Descrição"]}<br>
+<strong style="color:white;">Data:</strong> {item["Data"]}
+</p>
+</div>
+""",
+        unsafe_allow_html=True
+    )
+
+if prioridades:
+
+    for i in range(0, len(prioridades), 2):
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            exibir_card_prioridade(
+                prioridades[i]
+            )
+
+        if i + 1 < len(prioridades):
+
+            with col2:
+                exibir_card_prioridade(
+                    prioridades[i + 1]
+                )
+
+else:
+
+    st.success(
+        "Nenhuma prioridade crítica para hoje."
+    )
 
 st.divider()
 
@@ -212,45 +270,139 @@ aba1, aba2, aba3, aba4 = st.tabs(
 
 
 with aba1:
+
     st.subheader("📋 Planos de Ação")
 
     planos_agenda = [
-        plano for plano in planos
+        plano
+        for plano in planos
         if plano["status"] not in ["Concluído", "Cancelado"]
     ]
 
     if planos_agenda:
-        tabela_planos = []
 
-        for plano in planos_agenda:
-            tabela_planos.append(
-                {
-                    "Prazo": formatar_data_br(plano["prazo"]),
-                    "Urgência": classificar_urgencia_prazo(plano["prazo"]),
-                    "Colaborador": plano["colaborador_nome"],
-                    "Título": plano["titulo"],
-                    "Prioridade": plano["prioridade"],
-                    "Status": plano["status"]
-                }
-            )
+        for i in range(0, len(planos_agenda), 2):
 
-        st.dataframe(
-            pd.DataFrame(tabela_planos),
-            use_container_width=True,
-            hide_index=True
-        )
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                plano = planos_agenda[i]
+
+                urgencia = classificar_urgencia_prazo(
+                    plano["prazo"]
+                )
+
+                cor = "#1E4E7A"
+
+                if "Vencido" in urgencia:
+                    cor = "#DC2626"
+
+                elif "hoje" in urgencia:
+                    cor = "#D97706"
+
+                elif "3 dias" in urgencia:
+                    cor = "#CA8A04"
+
+                st.markdown(
+                    f"""
+<div style="
+background:#0F172A;
+border-left:6px solid {cor};
+padding:18px;
+border-radius:12px;
+margin-bottom:12px;
+">
+
+<h4 style="margin:0;color:white;">
+{plano["titulo"]}
+</h4>
+
+<p style="margin-top:8px;color:#CBD5E1;">
+<strong style="color:white;">Colaborador:</strong> {plano["colaborador_nome"]}<br>
+<strong style="color:white;">Prazo:</strong> {formatar_data_br(plano["prazo"])}<br>
+<strong style="color:white;">Urgência:</strong> {urgencia}<br>
+<strong style="color:white;">Prioridade:</strong> {plano["prioridade"]}<br>
+<strong style="color:white;">Status:</strong> {plano["status"]}
+</p>
+
+</div>
+""",
+                    unsafe_allow_html=True
+                )
+
+            if i + 1 < len(planos_agenda):
+
+                with col2:
+
+                    plano = planos_agenda[i + 1]
+
+                    urgencia = classificar_urgencia_prazo(
+                        plano["prazo"]
+                    )
+
+                    cor = "#1E4E7A"
+
+                    if "Vencido" in urgencia:
+                        cor = "#DC2626"
+
+                    elif "hoje" in urgencia:
+                        cor = "#D97706"
+
+                    elif "3 dias" in urgencia:
+                        cor = "#CA8A04"
+
+                    st.markdown(
+                        f"""
+<div style="
+background:#0F172A;
+border-left:6px solid {cor};
+padding:18px;
+border-radius:12px;
+margin-bottom:12px;
+">
+
+<h4 style="margin:0;color:white;">
+{plano["titulo"]}
+</h4>
+
+<p style="margin-top:8px;color:#CBD5E1;">
+<strong style="color:white;">Colaborador:</strong> {plano["colaborador_nome"]}<br>
+<strong style="color:white;">Prazo:</strong> {formatar_data_br(plano["prazo"])}<br>
+<strong style="color:white;">Urgência:</strong> {urgencia}<br>
+<strong style="color:white;">Prioridade:</strong> {plano["prioridade"]}<br>
+<strong style="color:white;">Status:</strong> {plano["status"]}
+</p>
+
+</div>
+""",
+                        unsafe_allow_html=True
+                    )
+
     else:
-        st.info("Nenhum plano de ação pendente.")
+
+        st.info(
+            "Nenhum plano de ação pendente."
+        )
 
 
 with aba2:
+
     st.subheader("🤝 1:1 Recomendadas")
 
     tabela_1_1 = []
 
     for colaborador in colaboradores:
+
         if colaborador.status != "Ativo":
             continue
+
+        status_1_1 = (
+            "🔴 Vencida"
+            if colaborador.proxima_reuniao_recomendada
+            and colaborador.proxima_reuniao_recomendada <= hoje
+            else "🟢 Em dia"
+        )
 
         tabela_1_1.append(
             {
@@ -258,26 +410,73 @@ with aba2:
                 "Última 1:1": formatar_data_br(colaborador.data_ultima_reuniao),
                 "Próxima recomendada": formatar_data_br(colaborador.proxima_reuniao_recomendada),
                 "Frequência": colaborador.frequencia_1_1,
-                "Status": (
-                    "🔴 Vencida"
-                    if colaborador.proxima_reuniao_recomendada
-                    and colaborador.proxima_reuniao_recomendada <= hoje
-                    else "🟢 Em dia"
-                )
+                "Status": status_1_1
             }
         )
 
     if tabela_1_1:
-        st.dataframe(
-            pd.DataFrame(tabela_1_1),
-            use_container_width=True,
-            hide_index=True
-        )
+
+        for i in range(0, len(tabela_1_1), 2):
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                item = tabela_1_1[i]
+
+                cor = "#1E4E7A"
+
+                if "Vencida" in item["Status"]:
+                    cor = "#DC2626"
+
+                st.markdown(
+                    f"""
+<div style="background:#0F172A; border-left:6px solid {cor}; padding:18px; border-radius:12px; margin-bottom:12px;">
+    <h4 style="margin:0;color:white;">{item["Colaborador"]}</h4>
+    <p style="margin-top:8px;color:#CBD5E1;">
+        <strong style="color:white;">Última 1:1:</strong> {item["Última 1:1"]}<br>
+        <strong style="color:white;">Próxima recomendada:</strong> {item["Próxima recomendada"]}<br>
+        <strong style="color:white;">Frequência:</strong> {item["Frequência"]}<br>
+        <strong style="color:white;">Status:</strong> {item["Status"]}
+    </p>
+</div>
+""",
+                    unsafe_allow_html=True
+                )
+
+            if i + 1 < len(tabela_1_1):
+
+                with col2:
+
+                    item = tabela_1_1[i + 1]
+
+                    cor = "#1E4E7A"
+
+                    if "Vencida" in item["Status"]:
+                        cor = "#DC2626"
+
+                    st.markdown(
+                        f"""
+<div style="background:#0F172A; border-left:6px solid {cor}; padding:18px; border-radius:12px; margin-bottom:12px;">
+    <h4 style="margin:0;color:white;">{item["Colaborador"]}</h4>
+    <p style="margin-top:8px;color:#CBD5E1;">
+        <strong style="color:white;">Última 1:1:</strong> {item["Última 1:1"]}<br>
+        <strong style="color:white;">Próxima recomendada:</strong> {item["Próxima recomendada"]}<br>
+        <strong style="color:white;">Frequência:</strong> {item["Frequência"]}<br>
+        <strong style="color:white;">Status:</strong> {item["Status"]}
+    </p>
+</div>
+""",
+                        unsafe_allow_html=True
+                    )
+
     else:
+
         st.info("Nenhum colaborador ativo encontrado.")
 
 
 with aba3:
+
     st.subheader("📝 Feedbacks em Acompanhamento")
 
     feedbacks_abertos = [
@@ -286,29 +485,71 @@ with aba3:
     ]
 
     if feedbacks_abertos:
-        tabela_feedbacks = []
 
-        for feedback in feedbacks_abertos:
-            tabela_feedbacks.append(
-                {
-                    "Revisão": formatar_data_br(feedback["data_revisao"]),
-                    "Colaborador": feedback["colaborador_nome"],
-                    "Tipo": feedback["tipo"],
-                    "Origem": feedback["origem"],
-                    "Status": feedback["status_acompanhamento"]
-                }
-            )
+        for i in range(0, len(feedbacks_abertos), 2):
 
-        st.dataframe(
-            pd.DataFrame(tabela_feedbacks),
-            use_container_width=True,
-            hide_index=True
-        )
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                feedback = feedbacks_abertos[i]
+
+                cor = "#1E4E7A"
+
+                if feedback["data_revisao"] and feedback["data_revisao"] <= hoje:
+                    cor = "#DC2626"
+                elif feedback["data_revisao"] and feedback["data_revisao"] <= limite_7_dias:
+                    cor = "#D97706"
+
+                st.markdown(
+                    f"""
+<div style="background:#0F172A; border-left:6px solid {cor}; padding:18px; border-radius:12px; margin-bottom:12px;">
+    <h4 style="margin:0;color:white;">{feedback["tipo"]}</h4>
+    <p style="margin-top:8px;color:#CBD5E1;">
+        <strong style="color:white;">Colaborador:</strong> {feedback["colaborador_nome"]}<br>
+        <strong style="color:white;">Origem:</strong> {feedback["origem"]}<br>
+        <strong style="color:white;">Revisão:</strong> {formatar_data_br(feedback["data_revisao"])}<br>
+        <strong style="color:white;">Status:</strong> {feedback["status_acompanhamento"]}
+    </p>
+</div>
+""",
+                    unsafe_allow_html=True
+                )
+
+            if i + 1 < len(feedbacks_abertos):
+
+                with col2:
+
+                    feedback = feedbacks_abertos[i + 1]
+
+                    cor = "#1E4E7A"
+
+                    if feedback["data_revisao"] and feedback["data_revisao"] <= hoje:
+                        cor = "#DC2626"
+                    elif feedback["data_revisao"] and feedback["data_revisao"] <= limite_7_dias:
+                        cor = "#D97706"
+
+                    st.markdown(
+                        f"""
+<div style="background:#0F172A; border-left:6px solid {cor}; padding:18px; border-radius:12px; margin-bottom:12px;">
+    <h4 style="margin:0;color:white;">{feedback["tipo"]}</h4>
+    <p style="margin-top:8px;color:#CBD5E1;">
+        <strong style="color:white;">Colaborador:</strong> {feedback["colaborador_nome"]}<br>
+        <strong style="color:white;">Origem:</strong> {feedback["origem"]}<br>
+        <strong style="color:white;">Revisão:</strong> {formatar_data_br(feedback["data_revisao"])}<br>
+        <strong style="color:white;">Status:</strong> {feedback["status_acompanhamento"]}
+    </p>
+</div>
+""",
+                        unsafe_allow_html=True
+                    )
+
     else:
+
         st.info("Nenhum feedback em acompanhamento.")
 
-
 with aba4:
+
     st.subheader("🎂 Próximos Aniversários")
 
     aniversariantes = []
@@ -331,10 +572,49 @@ with aba4:
     )
 
     if aniversariantes:
-        st.dataframe(
-            pd.DataFrame(aniversariantes),
-            use_container_width=True,
-            hide_index=True
-        )
+
+        for i in range(0, len(aniversariantes), 2):
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                item = aniversariantes[i]
+
+                st.markdown(
+                    f"""
+<div style="background:#0F172A; border-left:6px solid #D97706; padding:18px; border-radius:12px; margin-bottom:12px;">
+    <h4 style="margin:0;color:white;">🎂 {item["Colaborador"]}</h4>
+    <p style="margin-top:8px;color:#CBD5E1;">
+        <strong style="color:white;">Data:</strong> {item["Data"]}<br>
+        <strong style="color:white;">Dias restantes:</strong> {item["Dias restantes"]}<br>
+        <strong style="color:white;">Cargo:</strong> {item["Cargo"] or "-"}<br>
+        <strong style="color:white;">Unidade:</strong> {item["Unidade"] or "-"}
+    </p>
+</div>
+""",
+                    unsafe_allow_html=True
+                )
+
+            if i + 1 < len(aniversariantes):
+
+                with col2:
+                    item = aniversariantes[i + 1]
+
+                    st.markdown(
+                        f"""
+<div style="background:#0F172A; border-left:6px solid #D97706; padding:18px; border-radius:12px; margin-bottom:12px;">
+    <h4 style="margin:0;color:white;">🎂 {item["Colaborador"]}</h4>
+    <p style="margin-top:8px;color:#CBD5E1;">
+        <strong style="color:white;">Data:</strong> {item["Data"]}<br>
+        <strong style="color:white;">Dias restantes:</strong> {item["Dias restantes"]}<br>
+        <strong style="color:white;">Cargo:</strong> {item["Cargo"] or "-"}<br>
+        <strong style="color:white;">Unidade:</strong> {item["Unidade"] or "-"}
+    </p>
+</div>
+""",
+                        unsafe_allow_html=True
+                    )
+
     else:
+
         st.info("Nenhum aniversário nos próximos 30 dias.")

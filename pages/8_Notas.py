@@ -1,10 +1,13 @@
+import streamlit as st
+
 from utils.auth import exigir_login
 from utils.auth import mostrar_usuario_sidebar
+from utils.style import aplicar_estilo
 
+aplicar_estilo()
 exigir_login()
 mostrar_usuario_sidebar()
 
-import streamlit as st
 import pandas as pd
 
 from datetime import date
@@ -22,109 +25,20 @@ DATA_MINIMA = date(1950, 1, 1)
 DATA_MAXIMA = date(2150, 12, 31)
 
 
-st.title("🗒️ Notas Rápidas")
-
-st.info("Registre anotações rápidas sobre rotina, equipe, ideias e acompanhamentos.")
+st.markdown(
+    """
+<div style="background:linear-gradient(135deg,#1D4ED8,#2563EB,#38BDF8); padding:26px; border-radius:20px; margin-bottom:26px;">
+    <h1 style="color:white;margin-bottom:8px;">🗒️ Notas Rápidas</h1>
+    <p style="color:#E0F2FE;font-size:16px;margin-bottom:0;">
+        Registre observações, ideias, pendências, acompanhamentos e pontos importantes da rotina de gestão.
+    </p>
+</div>
+""",
+    unsafe_allow_html=True
+)
 
 
 colaboradores = listar_colaboradores()
-
-
-with st.expander("➕ Nova Nota", expanded=False):
-
-    with st.form("form_nova_nota"):
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            titulo = st.text_input("Título")
-
-            data_nota = st.date_input(
-                "Data",
-                value=date.today(),
-                min_value=DATA_MINIMA,
-                max_value=DATA_MAXIMA,
-                format="DD/MM/YYYY"
-            )
-
-            categoria = st.selectbox(
-                "Categoria",
-                [
-                    "Geral",
-                    "Colaborador",
-                    "Reunião",
-                    "Feedback",
-                    "Plano de ação",
-                    "Ideia",
-                    "Pendência",
-                    "Outro"
-                ]
-            )
-
-            prioridade = st.selectbox(
-                "Prioridade",
-                [
-                    "Baixa",
-                    "Média",
-                    "Alta",
-                    "Crítica"
-                ]
-            )
-
-        with col2:
-            relacionar_colaborador = st.selectbox(
-                "Relacionar a colaborador?",
-                [
-                    "Não",
-                    "Sim"
-                ]
-            )
-
-            colaborador_id = None
-
-            if relacionar_colaborador == "Sim":
-
-                if colaboradores:
-                    colaborador = st.selectbox(
-                        "Colaborador relacionado",
-                        colaboradores,
-                        format_func=lambda item: item.nome
-                    )
-
-                    colaborador_id = colaborador.id
-                else:
-                    st.warning("Nenhum colaborador cadastrado.")
-
-            tag = st.text_input("Tag")
-
-        conteudo = st.text_area(
-            "Conteúdo da nota",
-            height=180
-        )
-
-        salvar = st.form_submit_button("Salvar Nota")
-
-        if salvar:
-
-            if not titulo:
-                st.error("Informe o título da nota.")
-            elif not conteudo:
-                st.error("Informe o conteúdo da nota.")
-            else:
-                dados = {
-                    "titulo": titulo,
-                    "conteudo": conteudo,
-                    "data": data_nota,
-                    "categoria": categoria,
-                    "colaborador_id": colaborador_id,
-                    "prioridade": prioridade,
-                    "tag": tag
-                }
-
-                criar_nota(dados)
-
-                st.success("Nota cadastrada com sucesso.")
-                st.rerun()
 
 
 st.divider()
@@ -133,7 +47,66 @@ st.subheader("Histórico de Notas")
 
 notas = listar_notas()
 
+total_notas = len(notas)
+
+notas_altas = len(
+    [
+        nota for nota in notas
+        if nota["prioridade"] in ["Alta", "Crítica"]
+    ]
+)
+
+notas_7_dias = len(
+    [
+        nota for nota in notas
+        if nota["data"]
+        and (date.today() - nota["data"]).days <= 7
+    ]
+)
+
+notas_30_dias = len(
+    [
+        nota for nota in notas
+        if nota["data"]
+        and (date.today() - nota["data"]).days <= 30
+    ]
+)
+
+categorias_utilizadas = len(
+    set(
+        [
+            nota["categoria"]
+            for nota in notas
+            if nota["categoria"]
+        ]
+    )
+)
+
+col1, col2, col3, col4, col5 = st.columns(5)
+
+with col1:
+    st.metric("🗒️ Notas", total_notas)
+
+with col2:
+    st.metric("🔥 Altas/Críticas", notas_altas)
+
+with col3:
+    st.metric("📅 7 dias", notas_7_dias)
+
+with col4:
+    st.metric("🗓️ 30 dias", notas_30_dias)
+
+with col5:
+    st.metric("📂 Categorias", categorias_utilizadas)
+
+st.divider()
+
 if notas:
+
+    busca = st.text_input(
+        "🔎 Buscar nota",
+        placeholder="Busque por título, conteúdo, categoria, prioridade ou tag..."
+    )
 
     col_f1, col_f2, col_f3 = st.columns(3)
 
@@ -156,6 +129,33 @@ if notas:
         )
 
     notas_filtradas = notas
+
+    if busca:
+        busca_normalizada = busca.strip().lower()
+
+        notas_filtradas = [
+            n for n in notas_filtradas
+            if busca_normalizada in str(n["titulo"] or "").lower()
+            or busca_normalizada in str(n["conteudo"] or "").lower()
+            or busca_normalizada in str(n["categoria"] or "").lower()
+            or busca_normalizada in str(n["prioridade"] or "").lower()
+            or busca_normalizada in str(n["tag"] or "").lower()
+            or busca_normalizada in str(n["colaborador_nome"] or "").lower()
+        ]
+
+    notas_7_dias = len(
+        [
+            nota for nota in notas
+            if nota["data"] and (date.today() - nota["data"]).days <= 7
+        ]
+    )
+
+    notas_30_dias = len(
+        [
+            nota for nota in notas
+            if nota["data"] and (date.today() - nota["data"]).days <= 30
+        ]
+    )
 
     if filtro_categoria != "Todas":
         notas_filtradas = [
@@ -192,13 +192,48 @@ if notas:
                 }
             )
 
-        df = pd.DataFrame(dados_tabela)
+for i in range(0, len(dados_tabela), 2):
 
-        st.dataframe(
-            df,
-            use_container_width=True,
-            hide_index=True
+    col1, col2 = st.columns(2)
+
+    with col1:
+        nota = dados_tabela[i]
+
+        st.markdown(
+            f"""
+<div style="background:#0F172A; border-left:6px solid #1E4E7A; padding:18px; border-radius:12px; margin-bottom:12px;">
+    <h4 style="margin:0;color:white;">📝 {nota["Título"]}</h4>
+    <p style="margin-top:8px;color:#CBD5E1;">
+        <strong style="color:white;">Data:</strong> {nota["Data"]}<br>
+        <strong style="color:white;">Categoria:</strong> {nota["Categoria"]}<br>
+        <strong style="color:white;">Prioridade:</strong> {nota["Prioridade"]}<br>
+        <strong style="color:white;">Colaborador:</strong> {nota["Colaborador"]}<br>
+        <strong style="color:white;">Tag:</strong> {nota["Tag"] or "-"}
+    </p>
+</div>
+""",
+            unsafe_allow_html=True
         )
+
+    if i + 1 < len(dados_tabela):
+        with col2:
+            nota = dados_tabela[i + 1]
+
+            st.markdown(
+                f"""
+<div style="background:#0F172A; border-left:6px solid #1E4E7A; padding:18px; border-radius:12px; margin-bottom:12px;">
+    <h4 style="margin:0;color:white;">📝 {nota["Título"]}</h4>
+    <p style="margin-top:8px;color:#CBD5E1;">
+        <strong style="color:white;">Data:</strong> {nota["Data"]}<br>
+        <strong style="color:white;">Categoria:</strong> {nota["Categoria"]}<br>
+        <strong style="color:white;">Prioridade:</strong> {nota["Prioridade"]}<br>
+        <strong style="color:white;">Colaborador:</strong> {nota["Colaborador"]}<br>
+        <strong style="color:white;">Tag:</strong> {nota["Tag"] or "-"}
+    </p>
+</div>
+""",
+                unsafe_allow_html=True
+            )
 
         st.divider()
 
@@ -210,25 +245,67 @@ if notas:
             format_func=lambda item: f"{formatar_data_br(item['data'])} | {item['titulo']}"
         )
 
-        col1, col2, col3, col4 = st.columns(4)
+        st.markdown("### 📄 Detalhes da Nota")
 
-        with col1:
-            st.metric("Categoria", nota_selecionada["categoria"] or "-")
+        prioridade = nota_selecionada["prioridade"] or "-"
 
-        with col2:
-            st.metric("Prioridade", nota_selecionada["prioridade"] or "-")
+        cor_prioridade = "#1E4E7A"
 
-        with col3:
-            st.metric("Colaborador", nota_selecionada["colaborador_nome"] or "-")
+        if prioridade == "Alta":
+            cor_prioridade = "#D97706"
+        elif prioridade == "Crítica":
+            cor_prioridade = "#DC2626"
+        elif prioridade == "Média":
+            cor_prioridade = "#CA8A04"
 
-        with col4:
-            st.metric("Tag", nota_selecionada["tag"] or "-")
+        badges_html = f"""
+<div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+    <span style="background:#0F172A; border:1px solid #1E4E7A; color:white; padding:8px 12px; border-radius:999px;">
+        📂 {nota_selecionada["categoria"] or "-"}
+    </span>
+    <span style="background:{cor_prioridade}; color:white; padding:8px 12px; border-radius:999px;">
+        🔥 {prioridade}
+    </span>
+    <span style="background:#0F172A; border:1px solid #1E4E7A; color:white; padding:8px 12px; border-radius:999px;">
+        👤 {nota_selecionada["colaborador_nome"] or "-"}
+    </span>
+    <span style="background:#0F172A; border:1px solid #1E4E7A; color:white; padding:8px 12px; border-radius:999px;">
+        🏷️ {nota_selecionada["tag"] or "-"}
+    </span>
+</div>
+"""
 
-        st.write("**Data:**", formatar_data_br(nota_selecionada["data"]))
-        st.write("**Título:**", nota_selecionada["titulo"] or "-")
+        st.markdown(
+            badges_html,
+            unsafe_allow_html=True
+        )
 
-        st.write("**Conteúdo:**")
-        st.write(nota_selecionada["conteudo"] or "-")
+        st.markdown(
+            f"""
+<div style="background:#0F172A;
+            padding:20px;
+            border-radius:12px;
+            border-left:6px solid #2563EB;
+            margin-top:10px;">
+
+<h3 style="color:white;">
+📝 {nota_selecionada["titulo"]}
+</h3>
+
+<p style="color:#CBD5E1;">
+<strong>Data:</strong> {formatar_data_br(nota_selecionada["data"])}
+</p>
+
+<hr style="border:1px solid #1E293B;">
+
+<p style="color:#E2E8F0; white-space:pre-wrap;">
+{nota_selecionada["conteudo"] or "-"}
+</p>
+
+</div>
+""",
+    unsafe_allow_html=True
+)
 
         st.divider()
 
@@ -395,3 +472,99 @@ if notas:
 
 else:
     st.warning("Nenhuma nota cadastrada ainda.")
+
+with st.expander("➕ Nova Nota", expanded=False):
+
+    with st.form("form_nova_nota"):
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            titulo = st.text_input("Título")
+
+            data_nota = st.date_input(
+                "Data",
+                value=date.today(),
+                min_value=DATA_MINIMA,
+                max_value=DATA_MAXIMA,
+                format="DD/MM/YYYY"
+            )
+
+            categoria = st.selectbox(
+                "Categoria",
+                [
+                    "Geral",
+                    "Colaborador",
+                    "Reunião",
+                    "Feedback",
+                    "Plano de ação",
+                    "Ideia",
+                    "Pendência",
+                    "Outro"
+                ]
+            )
+
+            prioridade = st.selectbox(
+                "Prioridade",
+                [
+                    "Baixa",
+                    "Média",
+                    "Alta",
+                    "Crítica"
+                ]
+            )
+
+        with col2:
+            relacionar_colaborador = st.selectbox(
+                "Relacionar a colaborador?",
+                [
+                    "Não",
+                    "Sim"
+                ]
+            )
+
+            colaborador_id = None
+
+            if relacionar_colaborador == "Sim":
+
+                if colaboradores:
+                    colaborador = st.selectbox(
+                        "Colaborador relacionado",
+                        colaboradores,
+                        format_func=lambda item: item.nome
+                    )
+
+                    colaborador_id = colaborador.id
+                else:
+                    st.warning("Nenhum colaborador cadastrado.")
+
+            tag = st.text_input("Tag")
+
+        conteudo = st.text_area(
+            "Conteúdo da nota",
+            height=180
+        )
+
+        salvar = st.form_submit_button("Salvar Nota")
+
+        if salvar:
+
+            if not titulo:
+                st.error("Informe o título da nota.")
+            elif not conteudo:
+                st.error("Informe o conteúdo da nota.")
+            else:
+                dados = {
+                    "titulo": titulo,
+                    "conteudo": conteudo,
+                    "data": data_nota,
+                    "categoria": categoria,
+                    "colaborador_id": colaborador_id,
+                    "prioridade": prioridade,
+                    "tag": tag
+                }
+
+                criar_nota(dados)
+
+                st.success("Nota cadastrada com sucesso.")
+                st.rerun()
